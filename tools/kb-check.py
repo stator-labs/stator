@@ -24,12 +24,18 @@ STATUS_EMOJI = {"done": "✅", "now": "🔨", "next": "💡", "idea": "💡"}
 root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
 kb = root / "kb"
 problems: list[str] = []
+SKIP_DIRS = {".git", ".terraform"}  # VCS internals and downloaded OpenTofu providers/modules
 
-kb_files = sorted(p for p in kb.rglob("*") if p.is_file())
+
+def ours(p: Path) -> bool:
+    return not SKIP_DIRS.intersection(p.relative_to(root).parts)
+
+
+kb_files = sorted(p for p in kb.rglob("*") if p.is_file() and ours(p))
 if len(kb_files) > MAX_KB_FILES:
     problems.append(f"kb/ has {len(kb_files)} files (max {MAX_KB_FILES}). Merge, move into a lab README, or delete.")
 
-for p in list(kb.rglob("*.md")) + list((root / "labs").rglob("*.md")):
+for p in [p for p in list(kb.rglob("*.md")) + list((root / "labs").rglob("*.md")) if ours(p)]:
     n = len(p.read_text(encoding="utf-8").splitlines())
     if n > MAX_LINES:
         problems.append(f"{p.relative_to(root)} is {n} lines (max {MAX_LINES}). Cut it or split it by lab.")
@@ -50,7 +56,7 @@ if radar.exists():
         problems.append(f"kb/radar.md has {data_rows} rows (max {MAX_RADAR_ROWS}). Move adopted items into labs and delete dropped ones.")
 
 for p in root.rglob("*.md"):
-    if ".git" in p.parts:
+    if not ours(p):
         continue
     if re.search(r"(^|/)(sessions?|meetings?|standups?|status)(/|$)", p.relative_to(root).as_posix()):
         problems.append(f"{p.relative_to(root)} looks like a session/status note. Put handoffs in the Linear issue and the PR instead.")
