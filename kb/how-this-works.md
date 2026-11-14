@@ -47,7 +47,7 @@ updated: 2026-11-14
 - Tags on everything: `project=runway`, `lab=<nn>`, `runway:ephemeral`.
 - `make up` / `make down` per lab, `make nuke` for everything, and a nightly reaper that deletes ephemeral resources older than 6 hours.
 - Agents write OpenTofu; GitHub Actions applies it. A PR gets `tofu plan` (read-only OIDC role); a merge to `main` runs `tofu apply` after Yaaf approves the `aws-apply` environment. See [platform/infra](../platform/infra/README.md).
-- Yaaf's terminal is only for `make bootstrap`: the state bucket and the two OIDC roles. Run once, and again when the bootstrap stack changes.
+- Yaaf's terminal is only for `make bootstrap`: the state bucket and the two OIDC roles. Run once, and again when the bootstrap stack changes. It also stores the alert email as the Actions secret `ALERT_EMAIL`: the repo is public, so the address is never committed.
 
 ## Writing a lab
 Copy `templates/lab-README.md`. Lead with the proof. Every lab has a cost receipt. Decisions go inline as "Why not X?" paragraphs.

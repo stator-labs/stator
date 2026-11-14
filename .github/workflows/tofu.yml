@@ -118,6 +118,10 @@ jobs:
         env:
           STACKS: ${{ needs.detect.outputs.stacks }}
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          # Read by any stack that declares variable "alert_email"; ignored by the rest.
+          # PR plans cannot use the aws-apply environment (it accepts main only). The secret is
+          # an alert address, not a credential, and only same-repo PRs get it (forks are skipped).
+          TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }} # zizmor: ignore[secrets-outside-env]
           COMMENT: ${{ runner.temp }}/plan-comment.md
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
@@ -147,6 +151,12 @@ jobs:
               printf '\n```\n</details>\n'
             } >>"$COMMENT"
           done
+          # Backstop: the comment is public and GitHub masks secrets in logs only.
+          # A stack should mark alert_email sensitive; this catches one that doesn't.
+          if [ -n "$TF_VAR_alert_email" ]; then
+            body=$(cat "$COMMENT")
+            printf '%s\n' "${body//"$TF_VAR_alert_email"/(redacted)}" >"$COMMENT"
+          fi
           echo "failed=$failed" >> "$GITHUB_OUTPUT"
       - name: Post or update the plan comment
         if: ${{ !cancelled() }}
@@ -196,6 +206,7 @@ jobs:
         env:
           STACKS: ${{ needs.detect.outputs.stacks }}
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
         run: |
           set -euo pipefail
           for dir in $(jq -r '.[]' <<<"$STACKS"); do

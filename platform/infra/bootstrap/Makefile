@@ -1,7 +1,8 @@
 # The one manual step in Runway. Run once on Yaaf's Mac; safe to rerun.
 #   aws login --profile runway && gh auth login
 #   make bootstrap ALERT_EMAIL=<your alert email>
-# ALERT_EMAIL can also come from the environment. Never commit it: the repo is public.
+# ALERT_EMAIL can also come from the environment. It becomes an Actions secret.
+# Never commit it or store it as a variable: the repo is public.
 # The logic lives in bootstrap.sh: macOS ships make 3.81, which has no .ONESHELL,
 # and the exported AWS credentials must survive from one command to the next.
 

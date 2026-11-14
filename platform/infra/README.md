@@ -4,13 +4,14 @@ OpenTofu stacks. GitHub Actions plans them on every PR and applies them after me
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`. A stack is a folder with `.tf` files.
-- **`bootstrap/`** creates the state bucket, the GitHub OIDC provider and the `runway-plan` / `runway-apply` roles. Only Yaaf applies it, once, with `make bootstrap ALERT_EMAIL=...`. CI lints it but never plans or applies it.
+- **`bootstrap/`** creates the state bucket, the GitHub OIDC provider and the `runway-plan` / `runway-apply` roles. Only Yaaf applies it, once, with `make bootstrap ALERT_EMAIL=<your alert email>`. CI lints it but never plans or applies it.
 - **`modules/`** holds shared modules. A change there plans every stack.
 
 ## Rules every stack follows
 - **State:** S3 backend, key `<stack>/terraform.tfstate`. For a lab the stack name is the lab folder, e.g. `03-ephemeral-eks/terraform.tfstate`. The bucket is passed by CI (`-backend-config=bucket=$TF_STATE_BUCKET`), so no account ID is in code. Locking is the S3 lockfile (`use_lockfile = true`), not DynamoDB. `tools/tofu-stacks.py check` fails the PR if the key is wrong or reused.
 - **Tags:** every `provider "aws"` block has `default_tags` with `project`, `lab` and `runway:ephemeral` (`"true"` or `"false"`). The checkov check `CKV_RUNWAY_1` ([tools/checkov](../../tools/checkov/)) fails the PR otherwise.
 - **IAM:** roles and policies go under path `/runway/`, and every role sets `permissions_boundary` to the `runway-boundary` policy. The apply role cannot create one without it.
+- **Alert email:** a stack that needs it declares `variable "alert_email"` with `sensitive = true` and no default. CI passes it as `TF_VAR_alert_email` from the Actions secret `ALERT_EMAIL` (set by `make bootstrap`). A stack without that variable ignores it. Never put the address in code, a variable or a PR: the repo is public.
 - **Lock file:** commit `.terraform.lock.hcl`. CI inits with `-lockfile=readonly`.
 
 ## Add a stack

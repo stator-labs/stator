@@ -2,7 +2,7 @@
 # Called by `make bootstrap`. Idempotent:
 #   1. apply this stack (local state on the first run, the S3 bucket afterwards)
 #   2. move local state into the bucket (first run only)
-#   3. create/update GitHub environment `aws-apply` and the repo variables
+#   3. create/update GitHub environment `aws-apply`, the repo variables and the ALERT_EMAIL secret
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -88,15 +88,19 @@ if ! gh api "repos/$REPO/environments/aws-apply/deployment-branch-policies" \
     -f name=main -f type=branch >/dev/null
 fi
 
-say "Repo variables"
+say "Repo variables and secret"
 set_var() { gh variable set "$1" --repo "$REPO" --body "$2"; }
 set_var AWS_PLAN_ROLE_ARN "$PLAN_ROLE"
 set_var AWS_APPLY_ROLE_ARN "$APPLY_ROLE"
 set_var TF_STATE_BUCKET "$BUCKET"
 set_var AWS_REGION "$REGION"
-set_var ALERT_EMAIL "$ALERT_EMAIL"
+# The repo is public: variables print unmasked in logs, secrets are masked.
+# The address goes in as a secret and is never echoed. Remove any old variable.
+gh variable delete ALERT_EMAIL --repo "$REPO" >/dev/null 2>&1 || true
+printf '%s' "$ALERT_EMAIL" | gh secret set ALERT_EMAIL --repo "$REPO" >/dev/null
 
 say "Done"
-gh variable list --repo "$REPO"
+gh variable list --repo "$REPO" --json name --jq '.[].name | "variable: " + .'
+gh secret list --repo "$REPO" --json name --jq '.[].name | "secret:   " + .'
 gh api "repos/$REPO/environments/aws-apply" \
   --jq '"aws-apply reviewers: \([.protection_rules[]? | select(.type=="required_reviewers") | .reviewers[].reviewer.login] | join(","))"'
