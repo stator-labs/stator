@@ -17,6 +17,7 @@
 *.tfplan
 crash.log
 .terraform.lock.hcl.bak
+platform/infra/bootstrap/local_override.tf
 
 # Secrets — never commit
 .env

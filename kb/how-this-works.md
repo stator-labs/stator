@@ -1,6 +1,6 @@
 ---
 title: How this project runs
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # How this project runs
@@ -35,7 +35,7 @@ updated: 2026-11-13
 ## Sessions
 - **Control center:** a long-running Claude session that plans, dispatches and reviews. It keeps no state in its head.
 - **Cloud workers:** background Claude agents. One Linear issue each, its branch, a PR. **They never get AWS credentials.**
-- **Local sessions:** Claude Code on Yaaf's Mac for anything that needs his AWS login. Start one with "work on YAA-NN".
+- **Local sessions:** Claude Code on Yaaf's Mac. Same rules as cloud workers: no AWS credentials. Start one with "work on YAA-NN".
 - **Handoff:** every session ends with a comment on its Linear issue (what changed, what's next, open questions) and the PR link.
 - **Scheduled tasks:**
   - weekly **trend radar**: updates [radar](radar.md) and adds `Idea` issues
@@ -46,7 +46,8 @@ updated: 2026-11-13
 - Budgets at $5 / $15 / $30, and Cost Anomaly Detection.
 - Tags on everything: `project=runway`, `lab=<nn>`, `runway:ephemeral`.
 - `make up` / `make down` per lab, `make nuke` for everything, and a nightly reaper that deletes ephemeral resources older than 6 hours.
-- Changes reach AWS only through GitHub Actions (OIDC, scoped to `main`) or Yaaf's own terminal.
+- Agents write OpenTofu; GitHub Actions applies it. A PR gets `tofu plan` (read-only OIDC role); a merge to `main` runs `tofu apply` after Yaaf approves the `aws-apply` environment. See [platform/infra](../platform/infra/README.md).
+- Yaaf's terminal is only for `make bootstrap`: the state bucket and the two OIDC roles. Run once, and again when the bootstrap stack changes.
 
 ## Writing a lab
 Copy `templates/lab-README.md`. Lead with the proof. Every lab has a cost receipt. Decisions go inline as "Why not X?" paragraphs.
