@@ -18,7 +18,7 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 
 ## What I built
 _Planned:_
-- AWS Budgets at $5 / $15 / $30 + Cost Anomaly Detection (YAA-9)
+- AWS Budgets `runway-budget-5`, `-15`, `-30` (monthly, email at 100% of actual spend; the $30 one also at 100% of forecast) and a Cost Anomaly Detection monitor on AWS services with a daily email for anomalies of $1 or more (YAA-9). Code: [infra/](infra/). The alert address comes from the Actions secret `ALERT_EMAIL`. _Not applied yet._
 - ✅ Non-root IAM admin user `yaaf-admin` with MFA, signed in with `aws login --profile runway`; no long-lived keys (YAA-10). Checked 2026-11-14: caller ARN is `user/yaaf-admin`, `list-access-keys` is empty, `AccountAccessKeysPresent=0`, `AccountMFAEnabled=1`.
 - OpenTofu pipeline (YAA-11; YAA-12 was merged into it): `make bootstrap` creates the state bucket `runway-tfstate-<account>`, the GitHub OIDC provider, `runway-plan` (PRs, read-only) and `runway-apply` (environment `aws-apply`, `main` only). PRs get `tofu plan` as a comment; merges apply after approval. CI fails any AWS provider without `default_tags` `project`, `lab`, `runway:ephemeral`. Code: [platform/infra](../../platform/infra/README.md). _Not run yet._
 - `make nuke` + nightly reaper workflow (YAA-13)
@@ -27,7 +27,7 @@ _Planned:_
 ## Cost receipt
 | Spent | Idle | Teardown |
 |---|---|---|
-| — | — | — |
+| — | $0: budgets without actions and Anomaly Detection are free | `tofu destroy` of this stack; it is not ephemeral |
 
 ## Decisions
 **Why not Terraform?** OpenTofu, picked on Nov 13. It is open source (MPL 2.0) under the Linux Foundation; Terraform moved to the BSL. It has the S3 lockfile, which removes the DynamoDB lock table. The CLI and the AWS provider are the same, so the skills carry over.
@@ -37,6 +37,10 @@ _Planned:_
 **Why an approval gate?** The `main` ruleset requires a PR and a green `kb-check`, but 0 approvals: Yaaf works alone, and agents open the PRs. So a merge alone must not change AWS. The `aws-apply` environment needs Yaaf's approval and only accepts `main`, and the apply role trusts only that environment. That approval is the one hard gate before real changes.
 
 **Why not IAM Identity Center?** It grants access to AWS accounts only through an organization instance, and an account instance rejects permission sets. One account does not need an organization. An IAM user with MFA and `aws login` gives short-lived credentials without one.
+
+**Why $5 / $15 / $30, and forecast only on $30?** Each step is a louder signal: $5 is the first sign a lab leaked, $15 means act today, $30 is the ceiling. An actual-spend alert fires after the money is spent. A forecast alert on the small budgets would fire on day 1 of a month, when AWS has little data. On the $30 budget it warns before the ceiling is hit.
+
+**Why not an immediate anomaly alert?** AWS allows the IMMEDIATE frequency only for SNS subscribers. Email gets DAILY or WEEKLY. DAILY is the fastest email option. An SNS topic needs a topic policy for `costalerts.amazonaws.com` and a confirmed subscription: more moving parts than the alert is worth at this size. The $5 budget covers fast spikes.
 
 ## What broke
 - The first sign-in was as **root**. Fixed in YAA-10.
