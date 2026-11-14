@@ -18,7 +18,7 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 
 ## What I built
 _Planned:_
-- AWS Budgets `runway-budget-5`, `-15`, `-30` (monthly, email at 100% of actual spend; the $30 one also at 100% of forecast) and a Cost Anomaly Detection monitor on AWS services with a daily email for anomalies of $1 or more (YAA-9). Code: [infra/](infra/). The alert address comes from the repo variable `ALERT_EMAIL`. _Not applied yet._
+- AWS Budgets `runway-budget-5`, `-15`, `-30` (monthly, email at 100% of actual spend; the $30 one also at 100% of forecast) and a Cost Anomaly Detection monitor on AWS services with a daily email for anomalies of $1 or more (YAA-9). Code: [infra/](infra/). The alert address comes from the Actions secret `ALERT_EMAIL`. _Not applied yet._
 - ✅ Non-root IAM admin user `yaaf-admin` with MFA, signed in with `aws login --profile runway`; no long-lived keys (YAA-10). Checked 2026-11-14: caller ARN is `user/yaaf-admin`, `list-access-keys` is empty, `AccountAccessKeysPresent=0`, `AccountMFAEnabled=1`.
 - GitHub OIDC → AWS role scoped to `main` (YAA-11)
 - Remote state bucket, required tags, Terraform vs OpenTofu pick (YAA-12)

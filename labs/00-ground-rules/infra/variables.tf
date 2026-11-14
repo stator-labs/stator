@@ -1,5 +1,5 @@
 variable "alert_email" {
-  description = "Address for budget and anomaly alerts. Set from the repo variable ALERT_EMAIL; never commit it."
+  description = "Address for budget and anomaly alerts. Set in CI from the Actions secret ALERT_EMAIL (the repo is public); never commit it."
   type        = string
   sensitive   = true
   nullable    = false
