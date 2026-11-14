@@ -1,0 +1,207 @@
+name: tofu
+
+# PR: fmt, validate, tflint, checkov, then `tofu plan` per changed stack (plan role),
+#     posted as one PR comment that is updated in place.
+# main: `tofu apply` per changed stack in environment aws-apply (apply role, needs approval).
+# The bootstrap stack is never planned or applied here: only `make bootstrap` touches it.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "platform/infra/**"
+      - "labs/*/infra/**"
+      - ".github/workflows/tofu.yml"
+      - "tools/tofu-stacks.py"
+      - "tools/checkov/**"
+      - ".tflint.hcl"
+  push:
+    branches: [main]
+    paths:
+      - "platform/infra/**"
+      - "labs/*/infra/**"
+      - ".github/workflows/tofu.yml"
+      - "tools/tofu-stacks.py"
+      - "tools/checkov/**"
+      - ".tflint.hcl"
+
+permissions:
+  contents: read
+
+# PRs: a new push cancels the old plan. main: no concurrency group, because GitHub
+# drops queued runs beyond one and a dropped run would skip an apply. The S3
+# lockfile (-lock-timeout) serializes applies instead.
+concurrency:
+  group: tofu-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TF_IN_AUTOMATION: "1"
+  TF_INPUT: "0"
+
+jobs:
+  detect:
+    name: detect stacks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      stacks: ${{ steps.stacks.outputs.stacks }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: stacks
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          stacks=$(python3 tools/tofu-stacks.py changed "$BASE" "$HEAD")
+          echo "changed stacks: $stacks"
+          echo "stacks=$stacks" >> "$GITHUB_OUTPUT"
+
+  check:
+    name: tofu-check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned tofu, tflint, checkov (SHA256-checked)
+        run: sudo tools/cloud-setup.sh tofu tflint checkov
+      - name: Stack layout (backend key per stack)
+        run: python3 tools/tofu-stacks.py check
+      - name: tofu fmt
+        run: tofu fmt -check -recursive -diff
+      - name: tofu validate
+        run: |
+          for dir in $(python3 tools/tofu-stacks.py all | jq -r '.[]'); do
+            echo "::group::$dir"
+            tofu -chdir="$dir" init -backend=false -lockfile=readonly
+            tofu -chdir="$dir" validate
+            echo "::endgroup::"
+          done
+      - name: tflint
+        run: tflint --recursive --config "$GITHUB_WORKSPACE/.tflint.hcl" --format compact
+      - name: checkov (includes CKV_RUNWAY_1, required default_tags)
+        run: checkov -d . --framework terraform --external-checks-dir tools/checkov --compact --quiet
+
+  plan:
+    name: tofu-plan
+    needs: [detect, check]
+    # Fork PRs get no OIDC token; the trust policy would refuse them anyway.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && needs.detect.outputs.stacks != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # OIDC -> runway-plan
+      pull-requests: write # the plan comment
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned tofu
+        run: sudo tools/cloud-setup.sh tofu
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: tofu-plan-${{ github.run_id }}
+      - name: tofu plan
+        id: plan
+        env:
+          STACKS: ${{ needs.detect.outputs.stacks }}
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          COMMENT: ${{ runner.temp }}/plan-comment.md
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -uo pipefail
+          n=$(jq length <<<"$STACKS")
+          limit=$(( 60000 / n ))
+          failed=0
+          printf '## tofu plan\n\nCommit `%s`. Applies after merge, in environment `aws-apply`.\n' "$HEAD_SHA" >"$COMMENT"
+          for dir in $(jq -r '.[]' <<<"$STACKS"); do
+            out="$RUNNER_TEMP/plan.txt"
+            {
+              tofu -chdir="$dir" init -no-color -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET" \
+                && tofu -chdir="$dir" plan -no-color -lock-timeout=5m
+            } >"$out" 2>&1
+            rc=$?
+            if [ "$rc" -eq 0 ]; then
+              summary=$(grep -E '^(Plan:|No changes\.)' "$out" | tail -1)
+            else
+              failed=1; summary="❌ failed (exit $rc)"
+            fi
+            # Plan text is data: stop it from being read as workflow commands.
+            token=$(openssl rand -hex 16)
+            echo "::stop-commands::$token"; cat "$out"; echo "::$token::"
+            {
+              printf '\n### `%s`\n%s\n\n<details><summary>Show output</summary>\n\n```\n' "$dir" "$summary"
+              tail -c "$limit" "$out"
+              printf '\n```\n</details>\n'
+            } >>"$COMMENT"
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+      - name: Post or update the plan comment
+        if: ${{ !cancelled() }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          COMMENT: ${{ runner.temp }}/plan-comment.md
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- runway-tofu-plan -->';
+            const body = `${marker}\n${fs.readFileSync(process.env.COMMENT, 'utf8')}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const mine = comments.find(c => c.user?.type === 'Bot' && c.body?.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+      - name: Fail if a plan failed
+        if: steps.plan.outputs.failed == '1'
+        run: exit 1
+
+  apply:
+    name: tofu-apply
+    needs: detect
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect.outputs.stacks != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: aws-apply # required reviewer; deployments from main only
+    permissions:
+      contents: read
+      id-token: write # OIDC -> runway-apply
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned tofu
+        run: sudo tools/cloud-setup.sh tofu
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: tofu-apply-${{ github.run_id }}
+      - name: tofu apply
+        env:
+          STACKS: ${{ needs.detect.outputs.stacks }}
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+        run: |
+          set -euo pipefail
+          for dir in $(jq -r '.[]' <<<"$STACKS"); do
+            echo "::group::$dir"
+            tofu -chdir="$dir" init -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
+            tofu -chdir="$dir" plan -lock-timeout=15m -out=tfplan
+            tofu -chdir="$dir" apply -lock-timeout=15m tfplan
+            echo "::endgroup::"
+          done

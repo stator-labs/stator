@@ -1,3 +1,3 @@
 # platform/
 
-Reusable building blocks that labs graduate into: IaC modules (`infra/modules/`) and GitOps config (`gitops/`). Empty until a lab needs it.
+Reusable building blocks that labs graduate into: OpenTofu stacks and modules ([`infra/`](infra/README.md)) and GitOps config (`gitops/`).

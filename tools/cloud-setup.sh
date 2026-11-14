@@ -3,7 +3,15 @@
 # Paste this file into the environment's setup script. Keep both copies identical.
 # Every download is pinned and checked against a SHA256 recorded here.
 # To bump a tool: change its version and hash in the same commit.
+# With no arguments it installs everything. CI installs a subset from the same
+# pins: `sudo tools/cloud-setup.sh tofu tflint checkov`.
 set -euo pipefail
+WANT=("$@")
+want() {
+  [ ${#WANT[@]} -eq 0 ] && return 0
+  local w; for w in "${WANT[@]}"; do [ "$w" = "$1" ] && return 0; done
+  return 1
+}
 
 BIN=/usr/local/bin
 WORK=$(mktemp -d)
@@ -42,14 +50,16 @@ install_one() {
 }
 
 pids=()
-for t in "${TOOLS[@]}"; do install_one "$t" & pids+=($!); done
+for t in "${TOOLS[@]}"; do want "${t%%|*}" || continue; install_one "$t" & pids+=($!); done
 for p in "${pids[@]}"; do wait "$p"; done   # set -e: any failed check stops the script
 
 # zizmor: single wheel with no dependencies, pinned by hash.
+if want zizmor; then
 cat >"$WORK/zizmor.txt" <<'EOF'
 zizmor==1.32.0 --hash=sha256:84a6acb975accc13408786a2bd274b572537ca19c933ebbc13e78f3988562071
 EOF
 python3 -m pip install -q --root-user-action=ignore --no-deps --require-hashes --only-binary=:all: -r "$WORK/zizmor.txt"
+fi
 
 mkdir -p /root/.terraform.d/plugin-cache   # TF_PLUGIN_CACHE_DIR
 echo "cloud-setup: done"
