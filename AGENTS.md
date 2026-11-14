@@ -18,13 +18,14 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 - **Supply chain:** pin GitHub Actions by commit SHA and container images by digest. Never add a dependency without saying why.
 
 ## Workflow
-1. Branch from `main` using the Linear issue's branch name (`gitBranchName`). Never push to `main`.
+1. Branch from `main` as `<area>/<topic>`, for example `lab00/budgets` or `cc/naming`. Area is `lab00`…`lab11`, `labd`, `platform` or `cc` (control center). Don't use Linear's `gitBranchName`: an issue number says nothing. Never push to `main`.
 2. Keep the change scoped to the issue. Anything else you notice becomes a new Linear issue with the `Idea` label.
 3. Before finishing:
    - update the lab README (Proof, Cost receipt, Decisions, What broke) and its frontmatter `status`, and keep the root README lab table in sync
    - run `python3 tools/kb-check.py` and fix what it reports
    - hand off in a comment on the Linear issue: what changed, what's next, open questions, and the PR link. Then move the issue to the right state.
-   - open a PR whose title includes the issue ID
+   - open a PR titled `<Area> · <plain name> (<issue ID>)`, for example `Lab 00 · Budget alerts (YAA-9)`. The ID at the end links the PR to Linear. Commit subjects start with the area: `lab00: add budget alerts`.
+   - in handoffs and comments, name an issue by what it is first, then its ID: "budget alerts (YAA-9)"
 4. Never mark a lab ✅ without a working proof.
 
 ## Cloud sessions
