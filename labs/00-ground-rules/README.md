@@ -36,6 +36,8 @@ _Planned:_
 
 **Why an approval gate?** The `main` ruleset requires a PR and a green `kb-check`, but 0 approvals: Yaaf works alone, and agents open the PRs. So a merge alone must not change AWS. The `aws-apply` environment needs Yaaf's approval and only accepts `main`, and the apply role trusts only that environment. That approval is the one hard gate before real changes.
 
+**Why trust the ID-based subject?** GitHub issues the OIDC `sub` claim in the form `repo:<owner>@<owner id>/<repo>@<repo id>:<context>`, and the roles trust exactly that. IDs never change when a repo is renamed, and a repo re-created under the same name gets a new ID, so nobody else can take over the name and assume the role. `bootstrap.sh` reads the prefix from `gh api repos/<repo>/actions/oidc/customization/sub` instead of rebuilding it from the repo name.
+
 **Why not IAM Identity Center?** It grants access to AWS accounts only through an organization instance, and an account instance rejects permission sets. One account does not need an organization. An IAM user with MFA and `aws login` gives short-lived credentials without one.
 
 **Why $5 / $15 / $30, and forecast only on $30?** Each step is a louder signal: $5 is the first sign a lab leaked, $15 means act today, $30 is the ceiling. An actual-spend alert fires after the money is spent. A forecast alert on the small budgets would fire on day 1 of a month, when AWS has little data. On the $30 budget it warns before the ceiling is hit.
@@ -46,6 +48,7 @@ _Planned:_
 - The first sign-in was as **root**. Fixed in YAA-10.
 - `sso-admin create-instance` is refused for an organization's management account.
 - After deleting the organization, an account instance of Identity Center rejected `create-permission-set`: account instances can't grant access to AWS accounts. Dropped Identity Center.
+- The first `tofu plan` in CI failed with "Not authorized to perform sts:AssumeRoleWithWebIdentity". The roles trusted `repo:yaaf-some/cloud-project:pull_request`, but this repo has immutable OIDC subjects, so the token's `sub` carries the owner and repo IDs. The trust policy had matched the code and the code was wrong; nothing in AWS showed the real value. Fix: trust the subject prefix GitHub reports, and print the token's claims (`tools/oidc-claims.py`) whenever sign-in fails.
 - `tofu plan` found no credentials: the AWS provider (`~> 5.80`) didn't read the CLI login. Fix: `eval "$(aws configure export-credentials --format env)"`. `make bootstrap` does this for you (YAA-11).
 
 ## What I'd change

@@ -4,7 +4,7 @@ OpenTofu stacks. GitHub Actions plans them on every PR and applies them after me
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`. A stack is a folder with `.tf` files.
-- **`bootstrap/`** creates the state bucket, the GitHub OIDC provider and the `runway-plan` / `runway-apply` roles. Only Yaaf applies it, once, with `make bootstrap ALERT_EMAIL=<your alert email>`. CI lints it but never plans or applies it.
+- **`bootstrap/`** creates the state bucket, the GitHub OIDC provider and the `runway-plan` / `runway-apply` roles. Only Yaaf applies it, once, with `make bootstrap ALERT_EMAIL=<your alert email>`. CI lints it but never plans or applies it. The roles trust the OIDC subject prefix GitHub reports for the repo (`bootstrap.sh` reads it), not a name typed into the code. If a job cannot sign in, its log prints the token's claims (`tools/oidc-claims.py`): compare `sub` and `aud` with the role's trust policy.
 - **`modules/`** holds shared modules. A change there plans every stack.
 
 ## Rules every stack follows

@@ -108,11 +108,16 @@ jobs:
           persist-credentials: false
       - name: Install pinned tofu
         run: sudo tools/cloud-setup.sh tofu
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+      - id: aws
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: tofu-plan-${{ github.run_id }}
+          retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
+      - name: Show OIDC claims (the role's trust policy must match them)
+        if: failure() && steps.aws.outcome == 'failure'
+        run: python3 tools/oidc-claims.py
       - name: tofu plan
         id: plan
         env:
@@ -159,7 +164,8 @@ jobs:
           fi
           echo "failed=$failed" >> "$GITHUB_OUTPUT"
       - name: Post or update the plan comment
-        if: ${{ !cancelled() }}
+        # No plan step, no comment file: skip, so a sign-in failure shows one clear error.
+        if: ${{ !cancelled() && steps.plan.outcome != 'skipped' }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           COMMENT: ${{ runner.temp }}/plan-comment.md
@@ -197,11 +203,16 @@ jobs:
           persist-credentials: false
       - name: Install pinned tofu
         run: sudo tools/cloud-setup.sh tofu
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+      - id: aws
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: tofu-apply-${{ github.run_id }}
+          retry-max-attempts: 3
+      - name: Show OIDC claims (the role's trust policy must match them)
+        if: failure() && steps.aws.outcome == 'failure'
+        run: python3 tools/oidc-claims.py
       - name: tofu apply
         env:
           STACKS: ${{ needs.detect.outputs.stacks }}
