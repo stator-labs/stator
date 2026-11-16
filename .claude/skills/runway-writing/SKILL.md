@@ -1,6 +1,6 @@
 ---
 name: runway-writing
-description: How to write and present anything in Runway. Use for every README, kb page, PR description, Linear issue or comment, handoff, scheduled-task prompt and change card. Plain English (Orwell's rules, a short ASD-STE100 baseline), results first, tables and Mermaid where they help.
+description: How to write anything in Runway. Use for every README, kb page, PR description, Linear issue or comment, and scheduled-task prompt. Plain English from Orwell's six rules and a short ASD-STE100 baseline; Runway's issue, README and heading formats. For reports and decisions, also use runway-presenting.
 ---
 
 <!--
@@ -9,7 +9,7 @@ https://github.com/tamdogood/builder-essential-skills/tree/1be9984bdafbb68eaff40
 MIT License, Copyright (c) 2026 Tam Nguyen. Full notice: LICENSE in this folder.
 Changes: cut the creative-writing section and the workflow steps; kept the six rules
 and a shorter STE list; added the AI-tells list from skills/write-blog/reference/voice.md;
-added Runway's presentation standard, change card, Linear and lab README formats.
+added Runway's Linear issue and lab README formats. Reports and change cards: runway-presenting.
 This file replaces the "Writing style" section of AGENTS.md.
 -->
 
@@ -45,35 +45,8 @@ Cut these AI tells:
 
 `python3 tools/kb-check.py` flags the stock phrases (it fails) and em dashes (a warning for now).
 
-## Presenting work to Yaaf
-1. **Result first.** The first line says what happened or what you need: "PR #12 is ready; it needs one decision."
-2. **Tables for comparisons** of two or more options, files or states. Prose for one line of reasoning.
-3. **A Mermaid diagram** when structure, data flow or trust changes (a new role, an OIDC trust, a new pipeline step). GitHub renders it. Skip it for anything a table shows.
-4. **Checked / not checked.** Mark each claim you tested or read at the source. Mark what you inferred or could not verify.
-5. **Skipped.** List what you left out and why, even when it's nothing.
-6. **A change card** when Yaaf must decide (see below). Never bury a decision in prose.
-
-## Change card
-Use it for every decision that needs Yaaf's yes. The human-in-the-loop policy says when. This is the format.
-
-```markdown
-**Change card: <what, in a few words>**
-| | |
-|---|---|
-| What | the change, in one or two sentences |
-| Why | the problem it solves; link the issue |
-| Cost | dollars per month, or $0; one-time cost |
-| Risk | what could go wrong, and how likely |
-| Rollback | the exact steps or command |
-| Checked | what you tested or read |
-| Not checked | what you could not test |
-
-**Decision:** <the question>. Recommendation: <yes/no/option>, because <one reason>.
-No answer means no.
-```
-
 ## Formats
 - **Linear issue:** human-readable first: one or two sentences of why, then **Done when** as a bullet list. Agent detail (file lists, plans, logs) goes last, in a collapsible block that opens with `+++ Agent notes` and closes with `+++`.
-- **Handoff comment:** what changed, what's next, open questions, what you skipped, the PR link. Name an issue by what it is, then its ID: "budget alerts (YAA-9)".
+- **Naming an issue** in prose: what it is, then its ID: "budget alerts (YAA-9)".
 - **Lab README:** the template order. Proof first. "Why not X?" paragraphs of 2–4 sentences. "What broke" keeps the first failure as it happened.
 - **Headings:** sentence case. Titles use "·" as a separator: "Lab 05 · Agent Jail".

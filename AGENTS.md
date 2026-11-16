@@ -13,31 +13,34 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 - **Airgap is not a requirement.** Angular/Node are not required.
 - **Real AWS beats emulation.** AWS Emulator, kind and k3d are for the inner loop only.
 - **When Yaaf says something is "not used" or "irrelevant", delete it.** Don't keep it "just in case".
-- **No AWS credentials in agent sessions.** Changes to real AWS go through GitHub Actions using the Lab 00 OIDC role, or through Yaaf's own terminal.
 - **$0 idle.** Everything you create in AWS is tagged `project=runway`, `lab=<nn>`, `runway:ephemeral=true|false` and has a teardown path.
 - **Supply chain:** pin GitHub Actions by commit SHA and container images by digest. Never add a dependency without saying why.
 
 ## Human in the loop
-Full rules: [kb/human-in-the-loop.md](kb/human-in-the-loop.md). In short:
-- **Tier 0 · Do:** reversible, private, free work. Report it in the handoff.
+Why, and what enforces it: [kb/human-in-the-loop.md](kb/human-in-the-loop.md). Card format: [`runway-presenting`](.claude/skills/runway-presenting/SKILL.md).
+- **Tier 0 · Do:** reversible, private, free work: read, research, edit on a branch, run checks, comment in Linear. Report it in the handoff.
 - **Tier 1 · Review:** repo changes go in a PR. **Never merge.** Yaaf merges.
-- **Tier 2 · Ask first:** AWS changes, any cost, IAM/trust/secrets/settings, deletions, anything public, or more than ~300 lines, more than one lab, or a project-wide convention. Stop, post a **change card** (what, why, cost, risk, rollback, picture if it helps), and wait for a yes. No answer means no.
-- **Tier 3 · Never:** AWS keys in a session, `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment.
-- When unsure of the tier, treat it as Tier 2.
+- **Tier 2 · Ask first.** Stop, post a **change card**, and wait for a yes. No answer means no. Any one of these is enough:
+  - **AWS:** applying a stack or approving a deployment.
+  - **Cost:** anything above $0, idle or per run.
+  - **Trust:** IAM, OIDC, rulesets, environments, secrets, tokens, network, connectors, `.claude/settings.json`.
+  - **Deletion:** resources, data, issues, scheduled tasks, branches with unmerged work.
+  - **Public:** comments on someone else's PR, posts, published pages, emails.
+  - **Scope:** work past the issue's **Done when**, more than one lab, more than ~300 changed lines, or a project-wide convention (this file, the skills, the pipeline, the setup script).
+- **Tier 3 · Never:** AWS credentials in a session (AWS changes run in GitHub Actions with the Lab 00 OIDC role, or in Yaaf's terminal), running `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment.
+- A yes covers one exact change. New commits, a different plan or a different target need a new yes.
+- Unsure of the tier? Treat it as Tier 2.
 
 ## Workflow
 1. Branch from `main` as `<area>/<topic>`, for example `lab00/budgets` or `cc/naming`. Area is `lab00`…`lab11`, `labd`, `platform` or `cc` (control center). Don't use Linear's `gitBranchName`: an issue number says nothing. Never push to `main`.
-2. Keep the change scoped to the issue. Anything else you notice becomes a new Linear issue with the `Idea` label.
-   - Work only toward the issue's **Done when**. A new topic, tool, dependency, lab or goal is an `Idea` issue, not work, however small.
-   - To grow a task past its issue, stop and ask Yaaf with a change card. No answer means no.
+2. Keep the change scoped to the issue's **Done when**. Anything new you notice (a topic, tool, lab or goal) becomes a Linear issue with the `Idea` label, not work, however small. Going further is Tier 2 (scope).
    - The same failure after two fix attempts: stop and report it. Don't keep trying.
    - Say what you skipped or deferred, and why, in the handoff and the PR.
 3. Before finishing:
    - update the lab README (Proof, Cost receipt, Decisions, What broke) and its frontmatter `status`, and keep the root README lab table in sync
    - run `python3 tools/kb-check.py` and fix what it reports
-   - hand off in a comment on the Linear issue: what changed, what's next, open questions, and the PR link. Then move the issue to the right state.
-   - open a PR titled `<Area> · <plain name> (<issue ID>)`, for example `Lab 00 · Budget alerts (YAA-9)`. The ID at the end links the PR to Linear. Commit subjects start with the area: `lab00: add budget alerts`.
-   - in handoffs and comments, name an issue by what it is first, then its ID: "budget alerts (YAA-9)"
+   - hand off in a comment on the Linear issue (format in `runway-presenting`). Then move the issue to the right state.
+   - open a PR with the template, titled `<Area> · <plain name> (<issue ID>)`, for example `Lab 00 · Budget alerts (YAA-9)`. The ID at the end links the PR to Linear. Commit subjects start with the area: `lab00: add budget alerts`.
 4. Never mark a lab ✅ without a working proof. Record the first failed run in "What broke"; don't rerun until green and hide it.
 
 ## Cloud sessions
@@ -53,4 +56,5 @@ Full rules: [kb/human-in-the-loop.md](kb/human-in-the-loop.md). In short:
 - Full rules: `kb/index.md`.
 
 ## Writing and presenting
-Follow [`.claude/skills/runway-writing/SKILL.md`](.claude/skills/runway-writing/SKILL.md) for every doc, PR, Linear issue, comment and scheduled-task prompt. In short: result first, short sentences, numbers over adjectives, no em dashes in prose, a change card for every decision.
+- **Writing:** [`runway-writing`](.claude/skills/runway-writing/SKILL.md) for every doc, PR, Linear issue, comment and scheduled-task prompt. Short sentences, numbers over adjectives, no em dashes in prose.
+- **Presenting:** [`runway-presenting`](.claude/skills/runway-presenting/SKILL.md) for handoffs, PR descriptions and decisions. Result first, tables for comparisons, Mermaid when trust or structure changes, a change card for Tier 2.

@@ -9,68 +9,26 @@ Agents do the work. Yaaf decides what is risky, costly or hard to undo. Everythi
 
 The aim is **few, informed decisions**, not many rubber stamps. An approval Yaaf can't judge in a minute is a bad approval request, not a careful one.
 
-## Principles
-1. **Gate by consequence, not by effort.** What matters is blast radius, reversibility, cost and trust, not how much work it took.
-2. **Enforce in tools, not just in prompts.** A rule an agent can skip is a hope. Approval gates live in GitHub environments, rulesets, IAM trust and Claude Code permission rules; this page says why.
-3. **Show what will happen, then ask.** Every request carries the evidence: the plan, the cost, the diff, the rollback. Yaaf approves what he sees.
-4. **An approval covers one exact change.** New commits, a different plan or a different target mean a new approval.
-5. **Silence means no.** Nothing waits on a timeout and then proceeds.
-6. **Ask once.** A standing decision is recorded in Linear and is not asked again (for example "network access is Full").
-7. **Tiers move with evidence.** Weekly board health counts approvals. A category approved unchanged for a month can move down a tier; anything that went wrong moves up.
+This page says **why** and **what enforces it**. The rules are in [AGENTS.md](../AGENTS.md#human-in-the-loop). The change card format is in the [`runway-presenting`](../.claude/skills/runway-presenting/SKILL.md) skill.
 
-## The four tiers
-| Tier | What | Examples | How Yaaf sees it |
-|---|---|---|---|
-| **0 · Do** | Reversible, private, free | read code, research, edit on a branch, run checks, draft PRs, Linear comments and status | Linear handoff and the PR. No interruption |
-| **1 · Review** | Changes the repo, nothing else | code, docs, workflows, new tools, small fixes | A PR he reviews and merges himself. Agents never merge |
-| **2 · Ask first** | Real-world effect, cost, trust or scale | anything below | A **change card**. The agent stops until Yaaf says yes |
-| **3 · Never** | Agents don't do it at all | AWS keys in a session, root, running `make bootstrap`, disabling a guardrail, force-push to `main`, approving its own deployment | n/a |
-
-**Tier 2 triggers.** Any one is enough:
-- **AWS changes:** applying a stack, or approving a deployment.
-- **Cost:** any non-zero cost, including idle cost and anything metered per run.
-- **Trust and access:** IAM, OIDC trust, permission boundaries, GitHub rulesets, environments, secrets, tokens, network settings, connectors.
-- **Deletion:** resources, data, issues, scheduled tasks, or branches with unmerged work.
-- **Outside visibility:** comments on someone else's PR, public posts, publishing pages, emails.
-- **Scale:** more than about 300 changed lines, more than one lab, or a change to a project-wide convention (AGENTS.md, this page, the pipeline, the setup script).
-- **Doubt:** the agent isn't sure which tier applies.
-
-## The change card
-One card per decision, not per step. It must fit on one screen.
-
-```markdown
-### <What> — Tier 2: <trigger>
-**Why:** one sentence.
-**What changes:** table of resource or file · add / change / destroy · note.
-**Picture:** Mermaid diagram when trust, data flow or architecture changes.
-**Cost:** one-time · monthly · idle, with the source (Infracost or the AWS pricing page). "$0" needs a reason.
-**Risk:** what breaks if this is wrong, and who notices.
-**Security:** permissions or trust added or widened. "None" is a valid answer.
-**Rollback:** exact steps, and whether it is fully reversible.
-**Checked / not checked:** what was verified, and what only real AWS will show.
-**Decision:** approve · change · decline. Recommended: <one>. No answer = nothing happens.
-```
-
-Where it appears:
-- **AWS changes:** the plan comment on the PR, then the `aws-apply` approval in GitHub.
-- **Repo-wide changes:** the PR description, using the PR template.
-- **Everything else:** the agent's message in the session, plus a comment on the Linear issue.
+## Why it works this way
+1. **Gate by consequence, not by effort.** Blast radius, reversibility, cost and trust decide the tier, not how much work a change took. A 5-line IAM change is Tier 2; a 200-line README is Tier 1.
+2. **Enforce in tools, not just in prompts.** A rule an agent can skip is a hope. So the gates below live in GitHub, IAM and Claude Code settings, and prompts only explain them.
+3. **Show what will happen, then ask.** Yaaf approves what he sees: the plan, the cost, the diff, the rollback. A card without them can't be judged.
+4. **One approval, one exact change.** A yes on one plan says nothing about the next commit, plan or target.
+5. **Silence means no.** A timeout that proceeds turns every unread message into an approval.
 
 ## What enforces it
-| Gate | Covers | Where |
-|---|---|---|
-| `aws-apply` environment approval | every AWS change | GitHub environment; the apply role trusts only that environment |
-| `main` ruleset | no direct pushes, required `kb-check` | GitHub ruleset |
-| Plan comment with risk summary and cost | what an apply will do, before merge | `tofu.yml` |
-| Claude Code `ask` rules | merges, force pushes, `tofu apply`/`destroy`, AWS CLI, deleting scheduled tasks | `.claude/settings.json` |
-| Permission boundary and IAM path | roles agents' code can create | `platform/infra/bootstrap/iam.tf` |
-| Budgets and anomaly alerts | cost that slips through anyway | Lab 00 stack |
-
-## Interruptions
-- **Push notification:** only a Tier 2 card, or a failure that blocks work.
-- **Batched:** everything else goes in the Linear handoff, the PR, and the weekly board-health update.
-- **Bundled:** one message holds all open decisions, each with a recommended answer.
-- **Stale:** an unanswered card is re-raised once in the next board-health update, then dropped.
+| Gate | Covers | Where | State |
+|---|---|---|---|
+| `aws-apply` environment approval | every AWS change | GitHub environment; the apply role trusts only that environment | live |
+| `main` ruleset | no direct pushes; `kb-check` must pass | GitHub ruleset | live |
+| Plan comment | what an apply will do, before merge | `tofu.yml` | live; risk summary and cost planned |
+| Claude Code `ask` / `deny` rules | merges, force pushes, `tofu apply`/`destroy`, AWS CLI, scheduled tasks, environments; reading key files | `.claude/settings.json` | this PR |
+| PR template | the change card fields on every PR | `.github/pull_request_template.md` | this PR |
+| Style check | stock phrases, em dashes | `tools/kb-check.py` | this PR |
+| Permission boundary and IAM path | roles that agents' code can create | `platform/infra/bootstrap/iam.tf` | live |
+| Budgets and anomaly alerts | cost that slips through anyway | Lab 00 stack | merged, not applied |
 
 ## Sources
 - Anthropic, [framework for safe and trustworthy agents](https://www.anthropic.com/news/our-framework-for-developing-safe-and-trustworthy-agents): human control before high-stakes actions, plan-level approval, transparency.

@@ -9,7 +9,7 @@ Plain markdown. It reads the same on GitHub (web or the mobile app), in Obsidian
 
 ## What's here (this is the whole list)
 - [how-this-works](how-this-works.md): the operating model. Board, sessions, scheduled tasks, cost guardrails.
-- [human-in-the-loop](human-in-the-loop.md): what agents do alone, what Yaaf reviews, what needs his yes first, and the change card.
+- [human-in-the-loop](human-in-the-loop.md): why agents ask before some actions, and what enforces it. The rules are in AGENTS.md.
 - [radar](radar.md): one table of trends and tools being watched, max 25 rows.
 - [research/2026-11-runway-report](research/2026-11-runway-report.md): the current foundation report.
 
