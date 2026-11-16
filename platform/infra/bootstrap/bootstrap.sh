@@ -104,6 +104,9 @@ set_var AWS_PLAN_ROLE_ARN "$PLAN_ROLE"
 set_var AWS_APPLY_ROLE_ARN "$APPLY_ROLE"
 set_var TF_STATE_BUCKET "$BUCKET"
 set_var AWS_REGION "$REGION"
+# Not secret (owner and repo IDs are public). Stacks that create roles GitHub Actions may assume
+# (e.g. the reaper) build their trust from it. The name can't start with GITHUB_.
+set_var OIDC_SUB_PREFIX "$SUB_PREFIX"
 # The repo is public: variables print unmasked in logs, secrets are masked.
 # The address goes in as a secret and is never echoed. Remove any old variable.
 gh variable delete ALERT_EMAIL --repo "$REPO" >/dev/null 2>&1 || true
