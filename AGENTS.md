@@ -1,4 +1,4 @@
-# AGENTS.md — rules for any AI agent working in this repo
+# AGENTS.md: rules for any AI agent working in this repo
 
 You are working on **Runway** (see README.md). Yaaf owns it; you propose, he approves.
 
@@ -20,13 +20,17 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 ## Workflow
 1. Branch from `main` as `<area>/<topic>`, for example `lab00/budgets` or `cc/naming`. Area is `lab00`…`lab11`, `labd`, `platform` or `cc` (control center). Don't use Linear's `gitBranchName`: an issue number says nothing. Never push to `main`.
 2. Keep the change scoped to the issue. Anything else you notice becomes a new Linear issue with the `Idea` label.
+   - Work only toward the issue's **Done when**. A new topic, tool, dependency, lab or goal is an `Idea` issue, not work, however small.
+   - To grow a task past its issue, stop and ask Yaaf with a change card. No answer means no.
+   - The same failure after two fix attempts: stop and report it. Don't keep trying.
+   - Say what you skipped or deferred, and why, in the handoff and the PR.
 3. Before finishing:
    - update the lab README (Proof, Cost receipt, Decisions, What broke) and its frontmatter `status`, and keep the root README lab table in sync
    - run `python3 tools/kb-check.py` and fix what it reports
    - hand off in a comment on the Linear issue: what changed, what's next, open questions, and the PR link. Then move the issue to the right state.
    - open a PR titled `<Area> · <plain name> (<issue ID>)`, for example `Lab 00 · Budget alerts (YAA-9)`. The ID at the end links the PR to Linear. Commit subjects start with the area: `lab00: add budget alerts`.
    - in handoffs and comments, name an issue by what it is first, then its ID: "budget alerts (YAA-9)"
-4. Never mark a lab ✅ without a working proof.
+4. Never mark a lab ✅ without a working proof. Record the first failed run in "What broke"; don't rerun until green and hide it.
 
 ## Cloud sessions
 - The Cloud-Project environment runs `tools/cloud-setup.sh` (pinned, SHA256-checked tools). Bump a version and its hash together, then paste the file into the environment's setup script.
@@ -40,5 +44,5 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 - Replace instead of appending. Delete anything stale; git history is the archive.
 - Full rules: `kb/index.md`.
 
-## Writing style
-Short sentences. Show results before process. No marketing words. Numbers beat adjectives.
+## Writing and presenting
+Follow [`.claude/skills/runway-writing/SKILL.md`](.claude/skills/runway-writing/SKILL.md) for every doc, PR, Linear issue, comment and scheduled-task prompt. In short: result first, short sentences, numbers over adjectives, no em dashes in prose, a change card for every decision.
