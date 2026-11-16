@@ -17,6 +17,14 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 - **$0 idle.** Everything you create in AWS is tagged `project=runway`, `lab=<nn>`, `runway:ephemeral=true|false` and has a teardown path.
 - **Supply chain:** pin GitHub Actions by commit SHA and container images by digest. Never add a dependency without saying why.
 
+## Human in the loop
+Full rules: [kb/human-in-the-loop.md](kb/human-in-the-loop.md). In short:
+- **Tier 0 · Do:** reversible, private, free work. Report it in the handoff.
+- **Tier 1 · Review:** repo changes go in a PR. **Never merge.** Yaaf merges.
+- **Tier 2 · Ask first:** AWS changes, any cost, IAM/trust/secrets/settings, deletions, anything public, or more than ~300 lines, more than one lab, or a project-wide convention. Stop, post a **change card** (what, why, cost, risk, rollback, picture if it helps), and wait for a yes. No answer means no.
+- **Tier 3 · Never:** AWS keys in a session, `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment.
+- When unsure of the tier, treat it as Tier 2.
+
 ## Workflow
 1. Branch from `main` as `<area>/<topic>`, for example `lab00/budgets` or `cc/naming`. Area is `lab00`…`lab11`, `labd`, `platform` or `cc` (control center). Don't use Linear's `gitBranchName`: an issue number says nothing. Never push to `main`.
 2. Keep the change scoped to the issue. Anything else you notice becomes a new Linear issue with the `Idea` label.
