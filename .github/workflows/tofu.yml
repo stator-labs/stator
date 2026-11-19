@@ -110,6 +110,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: tofu-plan-${{ github.run_id }}
           retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
+          mask-aws-account-id: true # default is false; the repo is public
       - name: Show OIDC claims (the role's trust policy must match them)
         if: failure() && steps.aws.outcome == 'failure'
         run: python3 tools/oidc-claims.py
@@ -126,6 +127,7 @@ jobs:
           TF_VAR_github_sub_prefix: ${{ vars.OIDC_SUB_PREFIX }}
           COMMENT: ${{ runner.temp }}/plan-comment.md
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
         run: |
           set -uo pipefail
           n=$(jq length <<<"$STACKS")
@@ -158,6 +160,11 @@ jobs:
           if [ -n "$TF_VAR_alert_email" ]; then
             body=$(cat "$COMMENT")
             printf '%s\n' "${body//"$TF_VAR_alert_email"/(redacted)}" >"$COMMENT"
+          fi
+          # Same for the account number: the log masks it, the comment text does not.
+          if [ -n "$AWS_ACCOUNT_ID" ]; then
+            body=$(cat "$COMMENT")
+            printf '%s\n' "${body//"$AWS_ACCOUNT_ID"/(redacted)}" >"$COMMENT"
           fi
           echo "failed=$failed" >> "$GITHUB_OUTPUT"
       - name: Post or update the plan comment
@@ -236,6 +243,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: tofu-apply-${{ github.run_id }}
           retry-max-attempts: 3
+          mask-aws-account-id: true
       - name: Show OIDC claims (the role's trust policy must match them)
         if: failure() && steps.aws.outcome == 'failure'
         run: python3 tools/oidc-claims.py
@@ -246,8 +254,10 @@ jobs:
           TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
           # Read by a stack that declares variable "github_sub_prefix" (OIDC trust); ignored by the rest.
           TF_VAR_github_sub_prefix: ${{ vars.OIDC_SUB_PREFIX }}
+          AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
         run: |
           set -euo pipefail
+          echo "::add-mask::$AWS_ACCOUNT_ID"
           for dir in $(jq -r '.[]' <<<"$STACKS"); do
             echo "::group::$dir"
             tofu -chdir="$dir" init -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
