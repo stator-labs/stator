@@ -1,0 +1,66 @@
+name: tier-gate
+
+# Tier 1 PRs (docs, KB, templates; small) may auto-merge. Tier 2 PRs (trust paths, infra,
+# anything not on the allowlist, large) get a human merge. tools/tier-classify.py decides.
+# The job always reports (no `paths:` filter), because a required check that does not
+# report blocks the PR forever. It is a plain `pull_request` workflow with no secrets,
+# and it never looks at who opened the PR. It runs the classifier from the base branch.
+#
+# Enforcement: if auto-merge is enabled on a Tier 2 PR, this check fails, so GitHub
+# never completes the merge. Disabling auto-merge re-runs the check and it passes again,
+# so a human can still click Merge. Limit: when all other required checks are green and
+# only this one is re-running, there is a window of a few seconds. See kb/auto-merge-gates.md.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, auto_merge_enabled, auto_merge_disabled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tier-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  tier-gate:
+    name: tier-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # Run the classifier as it is on the base branch, not the PR's copy. A PR that edits
+      # the classifier must not grade itself. Only the PR that adds the file has no base copy.
+      - id: tier
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          tool="$RUNNER_TEMP/tier-classify.py"
+          if git cat-file -e "$BASE:tools/tier-classify.py" 2>/dev/null; then
+            git show "$BASE:tools/tier-classify.py" > "$tool"
+          else
+            echo "::notice::No classifier on the base branch yet; using the PR's copy (bootstrap only)."
+            cp tools/tier-classify.py "$tool"
+          fi
+          python3 "$tool" --self-test
+          python3 "$tool" "$BASE" "$HEAD"
+      - name: Tier 2 PRs must not auto-merge
+        env:
+          TIER: ${{ steps.tier.outputs.tier }}
+          REASONS: ${{ steps.tier.outputs.reasons }}
+          AUTO_MERGE: ${{ github.event.pull_request.auto_merge != null }}
+        run: |
+          echo "tier=$TIER auto_merge=$AUTO_MERGE reasons=$REASONS"
+          {
+            echo "### tier-gate: Tier $TIER"
+            echo "$REASONS"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$TIER" != 1 ] && [ "$AUTO_MERGE" = true ]; then
+            echo "::error::Tier 2 change ($REASONS). Auto-merge is for Tier 1 only. Disable auto-merge, then merge by hand."
+            exit 1
+          fi

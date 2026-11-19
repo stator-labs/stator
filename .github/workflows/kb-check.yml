@@ -1,15 +1,18 @@
 name: kb-check
 
+# Also runs on main, to catch a green PR that breaks main once merged (see kb/auto-merge-gates.md).
 on:
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: kb-check-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: kb-check-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   kb-check:
