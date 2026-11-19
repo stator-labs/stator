@@ -27,7 +27,7 @@ Why, and what enforces it: [kb/human-in-the-loop.md](kb/human-in-the-loop.md). C
   - **Deletion:** resources, data, issues, scheduled tasks, branches with unmerged work.
   - **Public:** comments on someone else's PR, posts, published pages, emails.
   - **Scope:** work past the issue's **Done when**, more than one lab, more than ~300 changed lines, or a project-wide convention (this file, the skills, the pipeline, the setup script).
-- **Tier 3 · Never:** AWS credentials in a session (AWS changes run in GitHub Actions with the Lab 00 OIDC role, or in Yaaf's terminal), running `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment.
+- **Tier 3 · Never:** AWS credentials in a session (AWS changes run in GitHub Actions with the Lab 00 OIDC role, or in Yaaf's terminal), running `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment, enabling auto-merge on a PR.
 - A yes covers one exact change. New commits, a different plan or a different target need a new yes.
 - Unsure of the tier? Treat it as Tier 2.
 
