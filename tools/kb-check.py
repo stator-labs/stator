@@ -8,6 +8,7 @@ Checks (rules in kb/index.md):
   4. kb/radar.md has at most MAX_RADAR_ROWS table rows.
   5. No session/meeting/status notes in the repo.
   6. Each lab's README status matches the emoji in the root README lab table.
+  7. Prose has no stock phrases (fails) and no em dashes (warns for now).
 
 Standard library only. Exit code 1 if any check fails.
 Usage: python3 tools/kb-check.py [repo_root]
@@ -76,6 +77,29 @@ for lab_readme in sorted((root / "labs").glob("*/README.md")):
     elif want and want not in row:
         problems.append(f"labs/{folder}: status '{m.group(1)}' but the root README shows something else (expected {want}).")
 
+# 7. Writing style (.claude/skills/runway-writing). Stock phrases fail; em dashes warn
+#    until the retroactive style pass (YAA-24), then move them to `problems`.
+STOCK = re.compile(r"\b(seamless(ly)?|robust|leverag\w*|cutting-edge|game-chang\w*|delve|pivotal|testament to"
+                   r"|in order to|due to the fact|it is important to note|best-in-class|world-class)\b", re.I)
+warnings: list[str] = []
+prose = [root / "README.md", root / "AGENTS.md", *root.glob("templates/*.md"), *root.glob("labs/*/README.md"),
+         *(root / "platform").rglob("README.md"), *(root / "tools").glob("*.md"),
+         *(p for p in kb.rglob("*.md") if "research" not in p.relative_to(kb).parts)]
+for p in sorted(p for p in set(prose) if p.exists() and ours(p)):
+    fenced = False
+    for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+        if fenced:
+            continue
+        where = f"{p.relative_to(root)}:{n}"
+        if m := STOCK.search(line):
+            problems.append(f"{where} uses the stock phrase '{m.group(0)}'. Say the concrete thing.")
+        if "—" in re.sub(r"\|\s*—\s*(?=\|)", "|", line):  # a lone — in a table cell means "no value"
+            warnings.append(f"{where} has an em dash. Use a period, colon, comma or parentheses.")
+
+for w in warnings:
+    print(f"  warning: {w}")
 if problems:
     print("kb-check: FAIL")
     for p in problems:
