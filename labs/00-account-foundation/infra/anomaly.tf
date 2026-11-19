@@ -15,9 +15,10 @@ resource "aws_ce_anomaly_monitor" "account" {
       MatchOptions = null
       Values       = [data.aws_caller_identity.current.account_id]
     }
-    Not  = null
-    Or   = null
-    Tags = null
+    Not               = null
+    Or                = null
+    ProductAttributes = null
+    Tags              = null
   })
 }
 
