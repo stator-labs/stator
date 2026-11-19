@@ -29,7 +29,6 @@
       "mcp__Linear__delete_attachment"
     ],
     "deny": [
-      "mcp__github__enable_pr_auto_merge",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(**/*.pem)",

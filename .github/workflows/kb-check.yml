@@ -3,6 +3,8 @@ name: kb-check
 on:
   pull_request:
     branches: [main]
+    # auto_merge_* re-runs the trust-path gate when auto-merge is switched on or off.
+    types: [opened, synchronize, reopened, auto_merge_enabled, auto_merge_disabled]
 
 permissions:
   contents: read
@@ -20,5 +22,30 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       # The runner's own python3 (3.12 on ubuntu-24.04) is enough: kb-check is stdlib-only.
       - run: python3 --version && python3 tools/kb-check.py
+      # Agents may auto-merge a PR only if it touches no trust path (AGENTS.md, Tier 1).
+      # A trust-path PR with auto-merge on fails here; with auto-merge off it passes,
+      # so Yaaf's own Merge button still works.
+      - name: Trust-path merge gate
+        env:
+          AUTO_MERGE: ${{ github.event.pull_request.auto_merge != null }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          trust_re='^(\.github/|\.claude/|tools/|platform/infra/bootstrap/|AGENTS\.md$|CLAUDE\.md$)'
+          hits=$(git diff --name-only "$BASE...$HEAD" | grep -E "$trust_re" || true)
+          iam=$(git diff "$BASE...$HEAD" -- '*.tf' | grep -E '^[+-][^+-].*aws_(iam|organizations)_' || true)
+          [ -n "$iam" ] && hits="$hits"$'\n'"(.tf change to aws_iam_* or aws_organizations_*)"
+          if [ -z "${hits//$'\n'/}" ]; then
+            echo "No trust path touched: auto-merge allowed."
+          elif [ "$AUTO_MERGE" = true ]; then
+            printf '%s\n' "$hits"
+            echo "::error::This PR touches a trust path. Turn auto-merge off; Yaaf merges it."
+            exit 1
+          else
+            printf '%s\n' "$hits"
+            echo "Trust path touched, auto-merge off: Yaaf merges."
+          fi
