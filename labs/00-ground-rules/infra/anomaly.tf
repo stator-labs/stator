@@ -1,7 +1,24 @@
-resource "aws_ce_anomaly_monitor" "services" {
-  name              = "runway-services"
-  monitor_type      = "DIMENSIONAL"
-  monitor_dimension = "SERVICE"
+data "aws_caller_identity" "current" {}
+
+# AWS allows one "AWS services" monitor per account and creates it itself (Default-Services-Monitor),
+# so a second one is refused ("Limit exceeded on dimensional spend monitor creation").
+# This monitor is ours instead: it watches the whole account. See the Lab 00 README, Decisions.
+resource "aws_ce_anomaly_monitor" "account" {
+  name         = "runway-account"
+  monitor_type = "CUSTOM"
+  # Every key is spelled out (null when unused): the API returns them, and leaving them out shows as a diff on every plan.
+  monitor_specification = jsonencode({
+    And            = null
+    CostCategories = null
+    Dimensions = {
+      Key          = "LINKED_ACCOUNT"
+      MatchOptions = null
+      Values       = [data.aws_caller_identity.current.account_id]
+    }
+    Not  = null
+    Or   = null
+    Tags = null
+  })
 }
 
 # AWS allows IMMEDIATE frequency only for SNS subscribers; email gets DAILY or WEEKLY.
@@ -9,7 +26,7 @@ resource "aws_ce_anomaly_monitor" "services" {
 resource "aws_ce_anomaly_subscription" "email" {
   name             = "runway-anomaly-email"
   frequency        = "DAILY"
-  monitor_arn_list = [aws_ce_anomaly_monitor.services.arn]
+  monitor_arn_list = [aws_ce_anomaly_monitor.account.arn]
 
   subscriber {
     type    = "EMAIL"
