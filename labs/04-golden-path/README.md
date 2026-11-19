@@ -9,7 +9,7 @@ roles: [Platform]
 linear: "P-YAA-6"
 ---
 
-# Lab 04 — Golden Path
+# Lab 04 · Golden Path
 
 **Proof:** _not yet_
 

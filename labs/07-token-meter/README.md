@@ -9,7 +9,7 @@ roles: [Cloud, Platform, SA, AI Infra]
 linear: "P-YAA-9"
 ---
 
-# Lab 07 — Token Meter
+# Lab 07 · Token Meter
 
 **Proof:** _not yet_
 

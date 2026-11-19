@@ -9,7 +9,7 @@ roles: [Platform, SA, Defense]
 linear: "P-YAA-11"
 ---
 
-# Lab 09 — Repatriation Drill
+# Lab 09 · Repatriation Drill
 
 **Proof:** _not yet_
 

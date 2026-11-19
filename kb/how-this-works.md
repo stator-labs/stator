@@ -33,9 +33,9 @@ updated: 2026-11-14
 - New trends never trigger a plan rewrite. They become `Idea` issues and, if worth watching, a row in [radar](radar.md).
 
 ## Sessions
-- **Control center:** a long-running Claude session that plans, dispatches and reviews. It keeps no state in its head.
-- **Cloud workers:** background Claude agents. One Linear issue each, its branch, a PR. **They never get AWS credentials.**
-- **Local sessions:** Claude Code on Yaaf's Mac. Same rules as cloud workers: no AWS credentials. Start one with "work on YAA-NN".
+- **Control center:** a long-running Claude session that plans, dispatches and reviews. It stores nothing itself: the plan lives in Linear, the work in the repo.
+- **Cloud workers:** background Claude agents. One Linear issue each, its branch, a PR. Rules: [Tier 3](../AGENTS.md#human-in-the-loop).
+- **Local sessions:** Claude Code on Yaaf's Mac. Same rules as cloud workers. Start one with "work on YAA-NN".
 - **Handoff:** every session ends with a comment on its Linear issue (what changed, what's next, open questions) and the PR link.
 - **Scheduled tasks:**
   - weekly **trend radar**: updates [radar](radar.md) and adds `Idea` issues

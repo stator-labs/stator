@@ -9,7 +9,7 @@ roles: [SA, Platform]
 linear: "P-YAA-13"
 ---
 
-# Lab 11 — Build-vs-Buy Memo
+# Lab 11 · Build-vs-Buy Memo
 
 **Proof:** _not yet_
 

@@ -9,7 +9,7 @@ roles: [SRE]
 linear: "P-YAA-10"
 ---
 
-# Lab 08 — SLOs + Governed AIOps
+# Lab 08 · SLOs + Governed AIOps
 
 **Proof:** _not yet_
 

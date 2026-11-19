@@ -9,7 +9,7 @@ roles: [SA, Cloud]
 linear: "P-YAA-4"
 ---
 
-# Lab 02 — Lambda vs Cluster Break-Even
+# Lab 02 · Lambda vs Cluster Break-Even
 
 **Proof:** _not yet_
 
