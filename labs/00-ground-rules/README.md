@@ -56,14 +56,13 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 - The first apply created the 3 budgets, then failed on the anomaly monitor ([run log](https://github.com/yaaf-some/cloud-project/actions/runs/44581039403/attempts/1)). A rerun of the same run failed the same way: `Limit exceeded on dimensional spend monitor creation`. The account already had AWS's default services monitor (`aws ce get-anomaly-monitors` showed it). Fix: our own account-level monitor.
 - The first `tofu plan` in CI failed with "Not authorized to perform sts:AssumeRoleWithWebIdentity". The roles trusted `repo:yaaf-some/cloud-project:pull_request`, but this repo has immutable OIDC subjects, so the token's `sub` carries the owner and repo IDs. The trust policy had matched the code and the code was wrong; nothing in AWS showed the real value. Fix: trust the subject prefix GitHub reports, and print the token's claims (`tools/oidc-claims.py`) whenever sign-in fails.
 - `tofu plan` found no credentials: the AWS provider (`~> 5.80`) didn't read the CLI login. Fix: `eval "$(aws configure export-credentials --format env)"`. `make bootstrap` does this for you (YAA-11).
-
 - Three stray budgets from an earlier manual attempt (`runway-monthly-5usd`, `-15usd`, `-30usd`) doubled the budget list. Yaaf deleted them by hand on Nov 19. The pipeline's `runway-budget-*` stayed.
 - The `aws-apply` run for PR #8 stayed in "waiting" for five days. Yaaf had to reject it by hand on Nov 19 (it shows as cancelled).
 - The IAM admin user could not open Cost Explorer or billing pages at first. It needed a one-time root step to allow IAM user access to billing and Cost Explorer ([AWS docs](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/control-access-billing.html)). Yaaf got it working on Nov 19.
 
 ## What I'd change
 - Grant billing and Cost Explorer access, and delete stale manual resources, before the first apply.
-- Run `aws ce get-anomaly-monitors` before writing the monitor. The account's default monitor would have shown the limit error at plan time.
+- Run `aws ce get-anomaly-monitors` before writing the monitor. It lists the account's default monitor, which is why a second services monitor is refused.
 - Cancel or reject a waiting `aws-apply` run when its PR is superseded, so it does not sit for days.
 
 **Target roles:** SA, Platform, Cloud, SRE, Security
