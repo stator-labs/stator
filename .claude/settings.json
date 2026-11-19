@@ -18,7 +18,6 @@
       "Bash(gh secret *)",
       "Bash(gh variable *)",
       "mcp__github__merge_pull_request",
-      "mcp__github__enable_pr_auto_merge",
       "mcp__github__delete_file",
       "mcp__github__update_pull_request_branch",
       "mcp__claude-code-remote__delete_trigger",
@@ -30,6 +29,7 @@
       "mcp__Linear__delete_attachment"
     ],
     "deny": [
+      "mcp__github__enable_pr_auto_merge",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(**/*.pem)",
