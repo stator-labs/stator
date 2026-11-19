@@ -22,8 +22,8 @@ This page says **why** and **what enforces it**. The rules are in [AGENTS.md](..
 | Gate | Covers | Where | State |
 |---|---|---|---|
 | `aws-apply` environment approval | every AWS change | GitHub environment; the apply role trusts only that environment | live |
-| `main` ruleset | no direct pushes; `kb-check` must pass | GitHub ruleset | live |
-| `tofu-gate` check | a PR that breaks `tofu-check` or `tofu-plan` cannot auto-merge; reports on every PR | `tofu.yml` | this PR; Yaaf adds it to the ruleset after merge |
+| `main` ruleset | no direct pushes; `docs-lint` must pass | GitHub ruleset | live |
+| `required-checks` check | a PR that breaks `infra-lint` or `infra-plan` cannot auto-merge; reports on every PR | `tofu.yml` | this PR; Yaaf adds it to the ruleset after merge |
 | Auto-merge is human-only | agents cannot enable auto-merge; only Yaaf's button does | `.claude/settings.json` `deny` | this PR |
 | Plan comment | what an apply will do, before merge | `tofu.yml` | live; risk summary and cost planned |
 | Claude Code `ask` / `deny` rules | merges, force pushes, `tofu apply`/`destroy`, AWS CLI, scheduled tasks, environments; reading key files | `.claude/settings.json` | this PR |

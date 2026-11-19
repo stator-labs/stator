@@ -1,4 +1,4 @@
-name: kb-check
+name: docs-lint
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   kb-check:
-    name: kb-check
+    name: docs-lint
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
