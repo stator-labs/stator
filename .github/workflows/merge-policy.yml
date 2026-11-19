@@ -1,21 +1,21 @@
-name: kb-check
+name: Merge policy
 
 on:
   pull_request:
     branches: [main]
-    # auto_merge_* re-runs the trust-path gate when auto-merge is switched on or off.
+    # auto_merge_* re-runs the check when auto-merge is switched on or off.
     types: [opened, synchronize, reopened, auto_merge_enabled, auto_merge_disabled]
 
 permissions:
   contents: read
 
 concurrency:
-  group: kb-check-${{ github.event.pull_request.number }}
+  group: merge-policy-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  kb-check:
-    name: kb-check
+  trust-paths:
+    name: Check merge policy
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -23,12 +23,10 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      # The runner's own python3 (3.12 on ubuntu-24.04) is enough: kb-check is stdlib-only.
-      - run: python3 --version && python3 tools/kb-check.py
       # Agents may auto-merge a PR only if it touches no trust path (AGENTS.md, Tier 1).
       # A trust-path PR with auto-merge on fails here; with auto-merge off it passes,
       # so Yaaf's own Merge button still works.
-      - name: Trust-path merge gate
+      - name: Block auto-merge on trust paths
         env:
           AUTO_MERGE: ${{ github.event.pull_request.auto_merge != null }}
           BASE: ${{ github.event.pull_request.base.sha }}

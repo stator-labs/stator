@@ -1,6 +1,6 @@
 ---
 lab: "07"
-title: "Token Meter"
+title: "AI Cost Attribution"
 status: idea
 effort: "2 weekends"
 cost_estimate: "$2–10"
@@ -9,7 +9,7 @@ roles: [Cloud, Platform, SA, AI Infra]
 linear: "P-YAA-9"
 ---
 
-# Lab 07 · Token Meter
+# Lab 07 · AI Cost Attribution
 
 **Proof:** _not yet_
 

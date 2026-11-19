@@ -1,6 +1,6 @@
 ---
 lab: "00"
-title: "Ground Rules"
+title: "Account Foundation"
 status: now
 effort: "1 weekend"
 cost_estimate: "~$0"
@@ -9,7 +9,7 @@ roles: [SA, Platform, Cloud, SRE, Security]
 linear: "P-YAA-2"
 ---
 
-# Lab 00 · Ground Rules
+# Lab 00 · Account Foundation
 
 **Proof:** _not yet_
 
@@ -34,7 +34,7 @@ _Planned:_
 
 **Why not a narrower apply role?** Labs will create Lambda, EKS, VPCs, Bedrock access and more; a hand-written allowlist would break on every new lab. So the apply role is PowerUserAccess, plus IAM writes only under `/runway/`, and only for roles that carry the `runway-boundary` permissions boundary. Explicit denies stop it from touching its own role and policy, the plan role, the boundary, the OIDC provider and the state bucket settings. Narrowing per lab is a later step, once the labs show what they need.
 
-**Why an approval gate?** The `main` ruleset requires a PR and a green `kb-check`, but 0 approvals: Yaaf works alone, and agents open the PRs. So a merge alone must not change AWS. The `aws-apply` environment needs Yaaf's approval and only accepts `main`, and the apply role trusts only that environment. That approval is the one hard gate before real changes.
+**Why an approval gate?** The `main` ruleset requires a PR and a green `Lint docs`, but 0 approvals: Yaaf works alone, and agents open the PRs. So a merge alone must not change AWS. The `aws-apply` environment needs Yaaf's approval and only accepts `main`, and the apply role trusts only that environment. That approval is the one hard gate before real changes.
 
 **Why trust the ID-based subject?** GitHub issues the OIDC `sub` claim in the form `repo:<owner>@<owner id>/<repo>@<repo id>:<context>`, and the roles trust exactly that. IDs never change when a repo is renamed, and a repo re-created under the same name gets a new ID, so nobody else can take over the name and assume the role. `bootstrap.sh` reads the prefix from `gh api repos/<repo>/actions/oidc/customization/sub` instead of rebuilding it from the repo name.
 

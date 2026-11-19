@@ -30,7 +30,7 @@ Runway lets you tell your strongest story: "I take chaotic, manual, risky enviro
   - SLO-based observability
 
   That covers the 2026 trend stack: agents, supply-chain security, FinOps for AI, serverless-vs-container economics, and hybrid/repatriation. No airgap, no Angular/Node.
-- **Organize it as a lab menu, not phases.** About 11 self-contained labs, done in any order. Each has one README from a shared template (Problem → What I built → Proof → Cost receipt → Decisions inline → What broke → What I'd change), tracked on a Now/Next/Later/Ideas board. Start with Lab 0, "Ground Rules": budgets, GitHub OIDC (no static keys), remote state and a one-command teardown. It costs about $0 and gives you your first resume bullet.
+- **Organize it as a lab menu, not phases.** About 11 self-contained labs, done in any order. Each has one README from a shared template (Problem → What I built → Proof → Cost receipt → Decisions inline → What broke → What I'd change), tracked on a Now/Next/Later/Ideas board. Start with Lab 0, "Account Foundation": budgets, GitHub OIDC (no static keys), remote state and a one-command teardown. It costs about $0 and gives you your first resume bullet.
 - **For the job hunt:**
   - Lead with AWS Solutions Architect Associate plus CKA.
   - Show AI fluency through *governed* agents rather than chatbots.

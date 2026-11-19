@@ -22,13 +22,13 @@ This page says **why** and **what enforces it**. The rules are in [AGENTS.md](..
 | Gate | Covers | Where | State |
 |---|---|---|---|
 | `aws-apply` environment approval | every AWS change | GitHub environment; the apply role trusts only that environment | live |
-| `main` ruleset | no direct pushes; `kb-check` and `tofu-gate` must pass | GitHub ruleset | live |
-| `tofu-gate` check | a PR that breaks `tofu-check` or `tofu-plan` cannot merge; reports on every PR | `tofu.yml` | live |
-| Trust-path merge gate | auto-merge on a PR that touches a trust path (list in AGENTS.md); Yaaf's own Merge still works | `kb-check.yml`, re-run when auto-merge turns on or off | this PR |
-| Plan comment | what an apply will do, before merge | `tofu.yml` | live; risk summary and cost planned |
+| `main` ruleset | no direct pushes; `Lint docs`, `Infrastructure checks passed` and `Check merge policy` must pass | GitHub ruleset | live |
+| `Infrastructure checks passed` check | a PR that breaks `Validate infrastructure` or `Plan infrastructure` cannot merge; reports on every PR | `infrastructure.yml` | live |
+| `Check merge policy` check | auto-merge on a PR that touches a trust path (list in AGENTS.md); Yaaf's own Merge still works | `merge-policy.yml`, re-run when auto-merge turns on or off | this PR |
+| Plan comment | what an apply will do, before merge | `infrastructure.yml` | live; risk summary and cost planned |
 | Claude Code `ask` / `deny` rules | merges, force pushes, `tofu apply`/`destroy`, AWS CLI, scheduled tasks, environments; reading key files | `.claude/settings.json` | live |
 | PR template | the change card fields on every PR | `.github/pull_request_template.md` | live |
-| Style check | stock phrases, em dashes | `tools/kb-check.py` | live |
+| Style check | stock phrases, em dashes | `tools/docs-lint.py` | live |
 | Permission boundary and IAM path | roles that agents' code can create | `platform/infra/bootstrap/iam.tf` | live |
 | Budgets and anomaly alerts | cost that slips through anyway | Lab 00 stack | live |
 

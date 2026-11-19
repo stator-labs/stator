@@ -1,6 +1,6 @@
 ---
 lab: "09"
-title: "Repatriation Drill"
+title: "On-Premises Repatriation"
 status: idea
 effort: "2–3 weekends"
 cost_estimate: "~$0"
@@ -9,7 +9,7 @@ roles: [Platform, SA, Defense]
 linear: "P-YAA-11"
 ---
 
-# Lab 09 · Repatriation Drill
+# Lab 09 · On-Premises Repatriation
 
 **Proof:** _not yet_
 

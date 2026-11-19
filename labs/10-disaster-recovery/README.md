@@ -1,6 +1,6 @@
 ---
 lab: "10"
-title: "Game Day"
+title: "Backup and Disaster Recovery"
 status: idea
 effort: "1–2 weekends"
 cost_estimate: "<$3"
@@ -9,7 +9,7 @@ roles: [SRE]
 linear: "P-YAA-12"
 ---
 
-# Lab 10 · Game Day
+# Lab 10 · Backup and Disaster Recovery
 
 **Proof:** _not yet_
 

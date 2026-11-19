@@ -1,6 +1,6 @@
 ---
 lab: "08"
-title: "SLOs + Governed AIOps"
+title: "SLOs and Governed AIOps"
 status: idea
 effort: "2 weekends"
 cost_estimate: "~$0"
@@ -9,7 +9,7 @@ roles: [SRE]
 linear: "P-YAA-10"
 ---
 
-# Lab 08 · SLOs + Governed AIOps
+# Lab 08 · SLOs and Governed AIOps
 
 **Proof:** _not yet_
 

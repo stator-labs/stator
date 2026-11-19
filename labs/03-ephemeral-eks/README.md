@@ -1,6 +1,6 @@
 ---
 lab: "03"
-title: "Ephemeral EKS in 20 Minutes"
+title: "Ephemeral EKS Clusters"
 status: idea
 effort: "2–3 weekends"
 cost_estimate: "$1–3/session"
@@ -9,7 +9,7 @@ roles: [Platform, SRE]
 linear: "P-YAA-5"
 ---
 
-# Lab 03 · Ephemeral EKS in 20 Minutes
+# Lab 03 · Ephemeral EKS Clusters
 
 **Proof:** _not yet_
 

@@ -1,6 +1,6 @@
 ---
 lab: "11"
-title: "Build-vs-Buy Memo"
+title: "Build vs Buy Analysis"
 status: idea
 effort: "1 weekend"
 cost_estimate: "~$0"
@@ -9,7 +9,7 @@ roles: [SA, Platform]
 linear: "P-YAA-13"
 ---
 
-# Lab 11 · Build-vs-Buy Memo
+# Lab 11 · Build vs Buy Analysis
 
 **Proof:** _not yet_
 

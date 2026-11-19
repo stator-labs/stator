@@ -9,7 +9,7 @@ updated: 2026-11-14
 | What | Where | Lifetime |
 |---|---|---|
 | Lab knowledge (decisions, proof, cost, what broke) | `labs/NN-*/README.md` | as long as the lab exists |
-| Cross-lab knowledge | `kb/`, at most 8 files (see [index](index.md)) | replaced, never appended |
+| Cross-lab knowledge | `docs/`, at most 8 files (see [index](index.md)) | replaced, never appended |
 | Work items, the board, handoffs between sessions | Linear: workspace `yaaf-some`, team `YAA` (may be renamed `RUN`) | closes with the issue |
 | Discussion of a change | the PR description and review | closes with the PR |
 | Briefing for Claude sessions | claude.ai Project "Cloud-project" → `claude/runway-control-center.md` | kept current |
@@ -29,7 +29,7 @@ updated: 2026-11-14
 | **Ideas** | Backlog + `Idea` label |
 
 - The `Role` label group (SA, Platform, Cloud, SRE, Security, AI Infra, Defense) shows what each issue showcases.
-- The `Control Center` label marks meta work.
+- The `Process` label marks meta work.
 - New trends never trigger a plan rewrite. They become `Idea` issues and, if worth watching, a row in [radar](radar.md).
 
 ## Sessions
@@ -39,7 +39,7 @@ updated: 2026-11-14
 - **Handoff:** every session ends with a comment on its Linear issue (what changed, what's next, open questions) and the PR link.
 - **Scheduled tasks:**
   - weekly **trend radar**: updates [radar](radar.md) and adds `Idea` issues
-  - weekly **board health**: Linear hygiene and `tools/kb-check.py`
+  - weekly **board health**: Linear hygiene and `tools/docs-lint.py`
   - one-off **re:Invent 2026 digest**: Dec 5
 
 ## Real AWS without surprise bills

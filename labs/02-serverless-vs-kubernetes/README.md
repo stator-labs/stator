@@ -1,6 +1,6 @@
 ---
 lab: "02"
-title: "Lambda vs Cluster Break-Even"
+title: "Serverless vs Kubernetes Cost"
 status: idea
 effort: "2 weekends"
 cost_estimate: "$5–15"
@@ -9,7 +9,7 @@ roles: [SA, Cloud]
 linear: "P-YAA-4"
 ---
 
-# Lab 02 · Lambda vs Cluster Break-Even
+# Lab 02 · Serverless vs Kubernetes Cost
 
 **Proof:** _not yet_
 

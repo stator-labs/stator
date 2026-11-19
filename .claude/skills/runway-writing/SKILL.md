@@ -1,6 +1,6 @@
 ---
 name: runway-writing
-description: How to write anything in Runway. Use for every README, kb page, PR description, Linear issue or comment, and scheduled-task prompt. Plain English from Orwell's six rules and a short ASD-STE100 baseline; Runway's issue, README and heading formats. For reports and decisions, also use runway-presenting.
+description: How to write anything in Runway. Use for every README, docs page, PR description, Linear issue or comment, and scheduled-task prompt. Plain English from Orwell's six rules and a short ASD-STE100 baseline; Runway's issue, README and heading formats. For reports and decisions, also use runway-presenting.
 ---
 
 <!--
@@ -43,10 +43,10 @@ Cut these AI tells:
 - Chat residue: "Great question", "I hope this helps", "Let me know if".
 - Bold on every noun. Bold a term once, where you define it.
 
-`python3 tools/kb-check.py` flags the stock phrases (it fails) and em dashes (a warning for now).
+`python3 tools/docs-lint.py` flags the stock phrases (it fails) and em dashes (a warning for now).
 
 ## Formats
 - **Linear issue:** human-readable first: one or two sentences of why, then **Done when** as a bullet list. Agent detail (file lists, plans, logs) goes last, in a collapsible block that opens with `+++ Agent notes` and closes with `+++`.
 - **Naming an issue** in prose: what it is, then its ID: "budget alerts (YAA-9)".
 - **Lab README:** the template order. Proof first. "Why not X?" paragraphs of 2–4 sentences. "What broke" keeps the first failure as it happened.
-- **Headings:** sentence case. Titles use "·" as a separator: "Lab 05 · Agent Jail".
+- **Headings:** sentence case. Titles use "·" as a separator: "Lab 05 · AI Agent Sandboxing".

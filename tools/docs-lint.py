@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
-"""Keep Runway's knowledge base small and honest.
+"""Lint Runway's docs: size, links, lab status and writing style.
 
-Checks (rules in kb/index.md):
-  1. kb/ holds at most MAX_KB_FILES files.
-  2. No markdown file in kb/ or labs/ exceeds MAX_LINES lines.
-  3. Every file in kb/ (except index.md) is linked from kb/index.md.
-  4. kb/radar.md has at most MAX_RADAR_ROWS table rows.
+Checks (rules in docs/index.md):
+  1. docs/ holds at most MAX_DOC_FILES files.
+  2. No markdown file in docs/ or labs/ exceeds MAX_LINES lines.
+  3. Every file in docs/ (except index.md) is linked from docs/index.md.
+  4. docs/radar.md has at most MAX_RADAR_ROWS table rows.
   5. No session/meeting/status notes in the repo.
   6. Each lab's README status matches the emoji in the root README lab table.
   7. Prose has no stock phrases and no em dashes.
 
 Standard library only. Exit code 1 if any check fails.
-Usage: python3 tools/kb-check.py [repo_root]
+Usage: python3 tools/docs-lint.py [repo_root]
 """
 import re
 import sys
 from pathlib import Path
 
-MAX_KB_FILES = 8
+MAX_DOC_FILES = 8
 MAX_LINES = 250
 MAX_RADAR_ROWS = 25
 STATUS_EMOJI = {"done": "✅", "now": "🔨", "next": "💡", "idea": "💡"}
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
-kb = root / "kb"
+docs = root / "docs"
 problems: list[str] = []
 SKIP_DIRS = {".git", ".terraform"}  # VCS internals and downloaded OpenTofu providers/modules
 
@@ -32,29 +32,29 @@ def ours(p: Path) -> bool:
     return not SKIP_DIRS.intersection(p.relative_to(root).parts)
 
 
-kb_files = sorted(p for p in kb.rglob("*") if p.is_file() and ours(p))
-if len(kb_files) > MAX_KB_FILES:
-    problems.append(f"kb/ has {len(kb_files)} files (max {MAX_KB_FILES}). Merge, move into a lab README, or delete.")
+doc_files = sorted(p for p in docs.rglob("*") if p.is_file() and ours(p))
+if len(doc_files) > MAX_DOC_FILES:
+    problems.append(f"docs/ has {len(doc_files)} files (max {MAX_DOC_FILES}). Merge, move into a lab README, or delete.")
 
-for p in [p for p in list(kb.rglob("*.md")) + list((root / "labs").rglob("*.md")) if ours(p)]:
+for p in [p for p in list(docs.rglob("*.md")) + list((root / "labs").rglob("*.md")) if ours(p)]:
     n = len(p.read_text(encoding="utf-8").splitlines())
     if n > MAX_LINES:
         problems.append(f"{p.relative_to(root)} is {n} lines (max {MAX_LINES}). Cut it or split it by lab.")
 
-index = (kb / "index.md").read_text(encoding="utf-8") if (kb / "index.md").exists() else ""
-for p in kb_files:
-    rel = p.relative_to(kb).as_posix()
+index = (docs / "index.md").read_text(encoding="utf-8") if (docs / "index.md").exists() else ""
+for p in doc_files:
+    rel = p.relative_to(docs).as_posix()
     if rel == "index.md":
         continue
     if rel not in index and p.name not in index:
-        problems.append(f"kb/{rel} is not linked from kb/index.md. Link it or delete it.")
+        problems.append(f"docs/{rel} is not linked from docs/index.md. Link it or delete it.")
 
-radar = kb / "radar.md"
+radar = docs / "radar.md"
 if radar.exists():
     rows = [l for l in radar.read_text(encoding="utf-8").splitlines() if l.startswith("|")]
     data_rows = max(0, len(rows) - 2)  # minus header and separator
     if data_rows > MAX_RADAR_ROWS:
-        problems.append(f"kb/radar.md has {data_rows} rows (max {MAX_RADAR_ROWS}). Move adopted items into labs and delete dropped ones.")
+        problems.append(f"docs/radar.md has {data_rows} rows (max {MAX_RADAR_ROWS}). Move adopted items into labs and delete dropped ones.")
 
 for p in root.rglob("*.md"):
     if not ours(p):
@@ -82,7 +82,7 @@ STOCK = re.compile(r"\b(seamless(ly)?|robust|leverag\w*|cutting-edge|game-chang\
                    r"|in order to|due to the fact|it is important to note|best-in-class|world-class)\b", re.I)
 prose = [root / "README.md", root / "AGENTS.md", *root.glob("templates/*.md"), *root.glob("labs/*/README.md"),
          *(root / "platform").rglob("README.md"), *(root / "tools").glob("*.md"),
-         *(p for p in kb.rglob("*.md") if "research" not in p.relative_to(kb).parts)]
+         *(p for p in docs.rglob("*.md") if "research" not in p.relative_to(docs).parts)]
 for p in sorted(p for p in set(prose) if p.exists() and ours(p)):
     fenced = False
     for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
@@ -97,8 +97,8 @@ for p in sorted(p for p in set(prose) if p.exists() and ours(p)):
             problems.append(f"{where} has an em dash. Use a period, colon, comma or parentheses.")
 
 if problems:
-    print("kb-check: FAIL")
+    print("docs-lint: FAIL")
     for p in problems:
         print(f"  - {p}")
     sys.exit(1)
-print(f"kb-check: OK ({len(kb_files)} kb files, radar within limit, lab table in sync)")
+print(f"docs-lint: OK ({len(doc_files)} docs files, radar within limit, lab table in sync)")

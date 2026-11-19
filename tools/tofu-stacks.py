@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""List OpenTofu stacks for .github/workflows/tofu.yml.
+"""List OpenTofu stacks for .github/workflows/infrastructure.yml.
 
 A stack is platform/infra/<name>/ or labs/<lab>/infra/ with at least one .tf file.
-Its state key is <name>/terraform.tfstate (for a lab: <lab folder>/terraform.tfstate).
+Its state key is <name>/terraform.tfstate (for a lab: <lab folder>/terraform.tfstate),
+except stacks in KEPT_KEYS, renamed after their first apply, which keep their first key.
 
   tofu-stacks.py check            every stack declares backend "s3" with its own key
   tofu-stacks.py all              all stack dirs, JSON list (bootstrap included)
@@ -20,8 +21,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BOOTSTRAP = "platform/infra/bootstrap"
 # Changes here can affect every stack, so they plan/apply all of them.
-SHARED = ("platform/infra/modules/", ".github/workflows/tofu.yml", "tools/tofu-stacks.py",
+SHARED = ("platform/infra/modules/", ".github/workflows/infrastructure.yml", "tools/tofu-stacks.py",
           "tools/checkov/", ".tflint.hcl")
+# Stacks renamed after their first apply keep their state key, so the rename moves no state.
+KEPT_KEYS = {"00-account-foundation": "00-ground-rules"}
 
 
 def stacks() -> dict[str, str]:
@@ -46,8 +49,8 @@ def check() -> int:
         text = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / d).glob("*.tf"))
         if not re.search(r'backend\s+"s3"', text):
             bad.append(f'{d}: no backend "s3" block')
-        elif not re.search(rf'key\s*=\s*"{re.escape(name)}/terraform\.tfstate"', text):
-            bad.append(f'{d}: backend key must be "{name}/terraform.tfstate"')
+        elif not re.search(rf'key\s*=\s*"{re.escape(KEPT_KEYS.get(name, name))}/terraform\.tfstate"', text):
+            bad.append(f'{d}: backend key must be "{KEPT_KEYS.get(name, name)}/terraform.tfstate"')
     for b in bad:
         print(f"tofu-stacks: {b}", file=sys.stderr)
     if not bad:
