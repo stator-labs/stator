@@ -9,7 +9,7 @@ roles: [Platform]   # SA, Platform, Cloud, SRE, Security, AI Infra, Defense
 linear: "P-YAA-N"
 ---
 
-# Lab NN — <Name>
+# Lab NN · <Name>
 
 **Proof:** <GIF or screenshot> · reproduce with `make proof`
 

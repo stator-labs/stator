@@ -9,7 +9,7 @@ roles: [SRE]
 linear: "P-YAA-12"
 ---
 
-# Lab 10 — Game Day
+# Lab 10 · Game Day
 
 **Proof:** _not yet_
 

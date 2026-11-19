@@ -9,7 +9,7 @@ roles: [Platform, Security, Defense]
 linear: "P-YAA-3"
 ---
 
-# Lab 01 — Poison-Proof Pipeline
+# Lab 01 · Poison-Proof Pipeline
 
 **Proof:** _not yet_
 

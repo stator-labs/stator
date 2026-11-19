@@ -32,7 +32,7 @@ Why, and what enforces it: [kb/human-in-the-loop.md](kb/human-in-the-loop.md). C
 - Unsure of the tier? Treat it as Tier 2.
 
 ## Workflow
-1. Branch from `main` as `<area>/<topic>`, for example `lab00/budgets` or `cc/naming`. Area is `lab00`…`lab11`, `labd`, `platform` or `cc` (control center). Don't use Linear's `gitBranchName`: an issue number says nothing. Never push to `main`.
+1. Branch from `main` as `<area>/<topic>`, for example `lab00/budgets` or `cc/naming`. Area is `lab00`…`lab11`, `labd`, `platform`, `radar` (weekly radar tasks, branch `radar/YYYY-MM-DD`) or `cc` (control center). Don't use Linear's `gitBranchName`: an issue number says nothing. Never push to `main`.
 2. Keep the change scoped to the issue's **Done when**. Anything new you notice (a topic, tool, lab or goal) becomes a Linear issue with the `Idea` label, not work, however small. Going further is Tier 2 (scope).
    - The same failure after two fix attempts: stop and report it. Don't keep trying.
    - Say what you skipped or deferred, and why, in the handoff and the PR.

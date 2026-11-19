@@ -9,7 +9,7 @@ roles: [SA, Platform, Cloud, SRE, Security]
 linear: "P-YAA-2"
 ---
 
-# Lab 00 — Ground Rules
+# Lab 00 · Ground Rules
 
 **Proof:** _not yet_
 
@@ -18,7 +18,7 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 
 ## What I built
 _Planned:_
-- AWS Budgets `runway-budget-5`, `-15`, `-30` (monthly, email at 100% of actual spend; the $30 one also at 100% of forecast) and a Cost Anomaly Detection monitor on the whole account with a daily email for anomalies of $1 or more (YAA-9). _Budgets are live; the monitor is not yet._ Code: [infra/](infra/). The alert address comes from the Actions secret `ALERT_EMAIL`. _Not applied yet._
+- Three monthly AWS Budgets: `runway-budget-5`, `-15` and `-30`. Each emails at 100% of actual spend. The $30 one also emails at 100% of forecast (YAA-9). A Cost Anomaly Detection monitor watches the whole account and sends a daily email for anomalies of $1 or more. _Budgets are live; the monitor is not yet._ Code: [infra/](infra/). The alert address comes from the Actions secret `ALERT_EMAIL`. _Not applied yet._
 - ✅ Non-root IAM admin user `yaaf-admin` with MFA, signed in with `aws login --profile runway`; no long-lived keys (YAA-10). Checked 2026-11-14: caller ARN is `user/yaaf-admin`, `list-access-keys` is empty, `AccountAccessKeysPresent=0`, `AccountMFAEnabled=1`.
 - OpenTofu pipeline (YAA-11; YAA-12 was merged into it): `make bootstrap` creates the state bucket `runway-tfstate-<account>`, the GitHub OIDC provider, `runway-plan` (PRs, read-only) and `runway-apply` (environment `aws-apply`, `main` only). PRs get `tofu plan` as a comment; merges apply after approval. CI fails any AWS provider without `default_tags` `project`, `lab`, `runway:ephemeral`. Code: [platform/infra](../../platform/infra/README.md). _Not run yet._
 - `make nuke` + nightly reaper workflow (YAA-13)

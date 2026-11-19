@@ -9,7 +9,7 @@ roles: [Platform, Security, AI Infra]
 linear: "P-YAA-7"
 ---
 
-# Lab 05 — Agent Jail
+# Lab 05 · Agent Jail
 
 **Proof:** _not yet_
 

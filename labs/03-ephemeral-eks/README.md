@@ -9,7 +9,7 @@ roles: [Platform, SRE]
 linear: "P-YAA-5"
 ---
 
-# Lab 03 — Ephemeral EKS in 20 Minutes
+# Lab 03 · Ephemeral EKS in 20 Minutes
 
 **Proof:** _not yet_
 

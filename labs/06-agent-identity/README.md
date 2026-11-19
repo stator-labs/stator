@@ -9,7 +9,7 @@ roles: [Security, Platform, SA]
 linear: "P-YAA-8"
 ---
 
-# Lab 06 — Who Did That? Agent Identity
+# Lab 06 · Who Did That? Agent Identity
 
 **Proof:** _not yet_
 

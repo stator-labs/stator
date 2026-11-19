@@ -9,7 +9,7 @@ roles: [Defense]
 linear: "P-YAA-14"
 ---
 
-# Lab D — Disconnected-Ready (optional)
+# Lab D · Disconnected-Ready (optional)
 
 **Proof:** _not yet_
 

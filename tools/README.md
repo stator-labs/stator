@@ -1,3 +1,7 @@
 # tools/
 
-The reaper, cost report, nuke and k6 load tests. Lab 00 adds the first ones.
+- `kb-check.py`: checks the knowledge base size, links, lab status sync and writing style (`python3 tools/kb-check.py`).
+- `tofu-stacks.py`: lists OpenTofu stacks for the plan and apply workflow, and checks each has its own S3 state key.
+- `oidc-claims.py`: prints the non-secret claims of a job's GitHub OIDC token, to debug AWS role trust policies.
+- `cloud-setup.sh`: pinned, SHA256-checked tool install for the Cloud-Project environment and CI.
+- `checkov/`: custom checkov check `CKV_RUNWAY_1`, which requires `default_tags` on every AWS provider.
