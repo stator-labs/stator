@@ -4,7 +4,7 @@ OpenTofu stacks. GitHub Actions plans them on every PR and applies them after me
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`. A stack is a folder with `.tf` files.
-- **`bootstrap/`** creates the state bucket, the GitHub OIDC provider and the `runway-plan` / `runway-apply` roles. Only Yaaf applies it, once, with `make bootstrap ALERT_EMAIL=<your alert email>`. CI lints it but never plans or applies it.
+- **`bootstrap/`** creates the state bucket, the GitHub OIDC provider and the `runway-plan` / `runway-apply` roles. Only Yaaf applies it, once, with `make bootstrap ALERT_EMAIL=<your alert email>`. CI lints it but never plans or applies it. The roles trust the OIDC subject prefix GitHub reports for the repo (`bootstrap.sh` reads it), not a name typed into the code. If a job cannot sign in, its log prints the token's claims (`tools/oidc-claims.py`): compare `sub` and `aud` with the role's trust policy.
 - **`modules/`** holds shared modules. A change there plans every stack.
 
 ## Rules every stack follows
@@ -12,6 +12,7 @@ OpenTofu stacks. GitHub Actions plans them on every PR and applies them after me
 - **Tags:** every `provider "aws"` block has `default_tags` with `project`, `lab` and `runway:ephemeral` (`"true"` or `"false"`). The checkov check `CKV_RUNWAY_1` ([tools/checkov](../../tools/checkov/)) fails the PR otherwise.
 - **IAM:** roles and policies go under path `/runway/`, and every role sets `permissions_boundary` to the `runway-boundary` policy. The apply role cannot create one without it.
 - **Alert email:** a stack that needs it declares `variable "alert_email"` with `sensitive = true` and no default. CI passes it as `TF_VAR_alert_email` from the Actions secret `ALERT_EMAIL` (set by `make bootstrap`). A stack without that variable ignores it. Never put the address in code, a variable or a PR: the repo is public.
+- **Roles GitHub Actions can assume:** a stack that creates one declares `variable "github_sub_prefix"` (no default). CI passes it from the repo variable `OIDC_SUB_PREFIX`, which `make bootstrap` sets from GitHub's own OIDC settings. Trust `"${var.github_sub_prefix}:<context>"` (`pull_request`, `environment:<name>` or `ref:refs/heads/main`), never a name typed into code.
 - **Lock file:** commit `.terraform.lock.hcl`. CI inits with `-lockfile=readonly`.
 
 ## Add a stack

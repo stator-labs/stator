@@ -20,6 +20,16 @@ ALERT_EMAIL=$(printf '%s' "${ALERT_EMAIL:-}" | tr -d '[:space:]')
 for bin in aws tofu gh; do command -v "$bin" >/dev/null || die "$bin not found"; done
 gh auth status >/dev/null 2>&1 || die "gh is not logged in: run gh auth login"
 
+say "GitHub OIDC subject of $REPO"
+# GitHub decides what the token's `sub` looks like (repo name, or owner and repo IDs when
+# immutable subjects are on). Trust whatever GitHub reports; never rebuild it from the name.
+SUB_PREFIX=$(gh api "repos/$REPO/actions/oidc/customization/sub" --jq '.sub_claim_prefix // empty') \
+  || die "cannot read the OIDC settings of $REPO (the gh login needs admin rights on it)"
+[ -n "$SUB_PREFIX" ] \
+  || die "GitHub reports no sub_claim_prefix for $REPO; run: gh api repos/$REPO/actions/oidc/customization/sub"
+echo "sub prefix: $SUB_PREFIX"
+export TF_VAR_github_sub_prefix="$SUB_PREFIX"
+
 say "AWS credentials from profile $AWS_PROFILE"
 # The AWS provider does not read the `aws login` cache; export short-lived keys
 # into this process only (see Lab 00 "What broke"). Never printed.
@@ -94,6 +104,9 @@ set_var AWS_PLAN_ROLE_ARN "$PLAN_ROLE"
 set_var AWS_APPLY_ROLE_ARN "$APPLY_ROLE"
 set_var TF_STATE_BUCKET "$BUCKET"
 set_var AWS_REGION "$REGION"
+# Not secret (owner and repo IDs are public). Stacks that create roles GitHub Actions may assume
+# (e.g. the reaper) build their trust from it. The name can't start with GITHUB_.
+set_var OIDC_SUB_PREFIX "$SUB_PREFIX"
 # The repo is public: variables print unmasked in logs, secrets are masked.
 # The address goes in as a secret and is never echoed. Remove any old variable.
 gh variable delete ALERT_EMAIL --repo "$REPO" >/dev/null 2>&1 || true
