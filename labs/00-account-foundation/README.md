@@ -14,7 +14,7 @@ roles: [SA, Platform, Cloud, SRE, Security]
 - **Plan comment on a PR:** [PR #13, `tofu plan`: 2 to add, 0 to change, 0 to destroy](https://github.com/yaaf-some/cloud-project/pull/13#issuecomment-7017659792).
 - **Approved apply:** [run 44585735716](https://github.com/yaaf-some/cloud-project/actions/runs/44585735716), the merge of PR #13. The job signed in to `runway-apply` with OIDC. The `aws-apply` deployment waited from 18:15 to 18:27 UTC until Yaaf approved it. Then the apply ended with `Apply complete! Resources: 2 added, 0 changed, 0 destroyed.` The two resources are the anomaly monitor `runway-account` and the subscription `runway-anomaly-email`.
 - **Budgets:** `runway-budget-5`, `-15` and `-30` were created by [the merge run of PR #9, first attempt](https://github.com/yaaf-some/cloud-project/actions/runs/44581039403/attempts/1). The log shows `Creation complete` for each. The same run then failed on the monitor (see What broke).
-- **Not proven yet:** the reaper and `make nuke` (YAA-13). Lab 00 stays 🔨 until they ship.
+- **Not proven yet:** the reaper's first dry run (it applies after the PR merges), reaper deletes, and `make nuke`. Lab 00 stays 🔨 until a reaper deletes a test resource.
 
 ## Problem
 Nobody knows what the AWS account costs, keys live in laptops, and nothing can be torn down with confidence. Before any lab touches AWS, the account needs a safety net: budgets, no static keys, remote state and a one-command teardown.
@@ -23,13 +23,14 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 - Three monthly AWS Budgets: `runway-budget-5`, `-15` and `-30`. Each emails at 100% of actual spend. The $30 one also emails at 100% of forecast (YAA-9). A Cost Anomaly Detection monitor watches the whole account and sends a daily email for anomalies of $1 or more. ✅ Budgets and monitor are applied. Code: [infra/](infra/). The alert address comes from the Actions secret `ALERT_EMAIL`.
 - ✅ Non-root IAM admin user `yaaf-admin` with MFA, signed in with `aws login --profile runway`; no long-lived keys (YAA-10). Checked 2026-11-14: caller ARN is `user/yaaf-admin`, `list-access-keys` is empty, `AccountAccessKeysPresent=0`, `AccountMFAEnabled=1`.
 - OpenTofu pipeline (YAA-11; YAA-12 was merged into it): `make bootstrap` creates the state bucket `runway-tfstate-<account>`, the GitHub OIDC provider, `runway-plan` (PRs, read-only) and `runway-apply` (environment `aws-apply`, `main` only). PRs get `tofu plan` as a comment; merges apply after approval. CI fails any AWS provider without `default_tags` `project`, `lab`, `runway:ephemeral`. Code: [platform/infra](../../platform/infra/README.md). ✅ Ran end to end: see Proof.
-- Not built yet: `make nuke` and the nightly reaper workflow (YAA-13)
+- Nightly reaper, dry run only (nightly reaper and `make nuke`, RUN-13): the role `runway-reaper` can read tags and delete nothing. `.github/workflows/reaper.yml` lists resources tagged `runway:ephemeral=true` at 03:17 UTC and writes the list to the job summary, with account numbers hidden. Code: [infra/reaper.tf](infra/reaper.tf). _Not applied yet._
+- Not built yet: reaper deletes (each ephemeral lab adds its own, with an age check) and `make nuke`, which waits for the first ephemeral stack (Lab 03).
 - ✅ README with proof and cost receipt (YAA-14)
 
 ## Cost receipt
 | Spent | Idle | Teardown |
 |---|---|---|
-| $0, no usage billed yet (as of 2026-11-19) | $0: budgets without actions and Anomaly Detection are free | `tofu destroy` of this stack; it is not ephemeral |
+| $0, no usage billed yet (as of 2026-11-19) | $0: budgets without actions and Anomaly Detection are free. The reaper role and the nightly run are free too (IAM roles cost nothing, and Actions minutes are free in a public repo) | `tofu destroy` of this stack; it is not ephemeral |
 
 ## Decisions
 **Why not Terraform?** OpenTofu, picked on Nov 13. It is open source (MPL 2.0) under the Linux Foundation; Terraform moved to the BSL. It has the S3 lockfile, which removes the DynamoDB lock table. The CLI and the AWS provider are the same, so the skills carry over.
@@ -45,6 +46,10 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 **Why $5 / $15 / $30, and forecast only on $30?** Each step is a louder signal: $5 is the first sign a lab leaked, $15 means act today, $30 is the ceiling. An actual-spend alert fires after the money is spent. A forecast alert on the small budgets would fire on day 1 of a month, when AWS has little data. On the $30 budget it warns before the ceiling is hit.
 
 **Why our own account monitor, not the default AWS services one?** AWS allows one "AWS services" monitor per account and creates it itself (`Default-Services-Monitor`), so a second one is refused. Adopting it would need its random ARN passed into the stack through a secret and a workflow change, and the stack would depend on a resource AWS owns. A custom monitor on the account needs neither. It reports anomalies for the whole account, with the services that caused each one listed in the alert. It does not score each service on its own.
+
+**Why does the reaper trust `main` and not the `aws-apply` environment?** The reaper runs at night with nobody awake, and an environment with a required reviewer would wait for Yaaf. The role only reads tags, so trusting `ref:refs/heads/main` is enough: only code already merged to `main` can run as it. Delete rights will need their own decision.
+
+**Why can't the reaper check a resource's age yet?** The tagging API returns ARNs and tags but no creation time ([AWS docs](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/API_GetResources.html)), and IAM can't express "older than 6 hours". Age has to come from each service's own lookup, so it arrives with that service's delete permission. Until then the report lists candidates and nothing else.
 
 **Why not an immediate anomaly alert?** AWS allows the IMMEDIATE frequency only for SNS subscribers. Email gets DAILY or WEEKLY. DAILY is the fastest email option. An SNS topic needs a topic policy for `costalerts.amazonaws.com` and a confirmed subscription: more moving parts than the alert is worth at this size. The $5 budget covers fast spikes.
 

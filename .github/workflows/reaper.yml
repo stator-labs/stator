@@ -1,0 +1,58 @@
+name: Reaper
+
+# Nightly dry run: lists resources tagged runway:ephemeral=true and deletes nothing.
+# The role runway-reaper trusts only runs on main (the schedule and manual runs). The AWS
+# trust policy refuses pull requests and other branches, and the job also stops early on them.
+# GitHub pauses schedules in a public repo after 60 days without activity; the weekly
+# board-health task checks that this workflow still ran.
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # 03:17 UTC, off the top of the hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reaper
+  cancel-in-progress: false
+
+jobs:
+  find:
+    name: "Reaper: find ephemeral resources"
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # OIDC -> runway-reaper
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: role
+        name: Name the reaper role
+        env:
+          APPLY_ROLE_ARN: ${{ vars.AWS_APPLY_ROLE_ARN }}
+        run: |
+          # Same account and path as the apply role, so no new repo variable is needed.
+          arn="${APPLY_ROLE_ARN%runway-apply}runway-reaper"
+          echo "::add-mask::$arn"
+          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+      - id: aws
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ steps.role.outputs.arn }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: runway-reaper-${{ github.run_id }}
+          retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
+          mask-aws-account-id: true # default is false; the repo is public
+      - name: Show OIDC claims (the role's trust policy must match them)
+        if: failure() && steps.aws.outcome == 'failure'
+        run: python3 tools/oidc-claims.py
+      - name: Find resources tagged runway:ephemeral=true
+        run: |
+          aws resourcegroupstaggingapi get-resources \
+            --tag-filters Key=runway:ephemeral,Values=true \
+            | python3 tools/reaper.py >> "$GITHUB_STEP_SUMMARY"
