@@ -1,0 +1,16 @@
+# Keeps the SHA-pinned GitHub Actions current. Each bump is a PR that touches .github/,
+# so Yaaf merges it. The cooldown skips releases younger than 7 days: most compromised
+# releases are caught and pulled within that window.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "platform"
+    groups:
+      actions:
+        patterns: ["*"]
