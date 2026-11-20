@@ -9,7 +9,7 @@ except stacks in KEPT_KEYS, renamed after their first apply, which keep their fi
   tofu-stacks.py all              all stack dirs, JSON list (bootstrap included)
   tofu-stacks.py changed BASE HEAD
                                   stacks touched between two commits, JSON list.
-                                  Excludes bootstrap: only Yaaf applies it.
+                                  Excludes TERMINAL_ONLY stacks: only Yaaf applies them.
 Standard library only.
 """
 import json
@@ -19,7 +19,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-BOOTSTRAP = "platform/infra/bootstrap"
+# Applied only from Yaaf's terminal. CI lints them but never plans or applies them: bootstrap
+# creates the CI roles, and foundation manages the AWS organization from the management account.
+TERMINAL_ONLY = ("platform/infra/bootstrap", "platform/infra/foundation")
 # Changes here can affect every stack, so they plan/apply all of them.
 SHARED = ("platform/infra/modules/", ".github/workflows/infrastructure.yml", "tools/tofu-stacks.py",
           "tools/checkov/", ".tflint.hcl")
@@ -59,7 +61,7 @@ def check() -> int:
 
 
 def changed(base: str, head: str) -> list[str]:
-    all_stacks = [d for d in stacks() if d != BOOTSTRAP]
+    all_stacks = [d for d in stacks() if d not in TERMINAL_ONLY]
     if set(base) <= {"0"}:  # first push of a branch: no base to diff against
         return all_stacks
     files = subprocess.run(["git", "diff", "--name-only", f"{base}...{head}"], cwd=ROOT,

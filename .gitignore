@@ -32,3 +32,6 @@ labs/**/proof/tmp/
 .obsidian/graph.json
 .obsidian/plugins/
 *.canvas
+
+# Personal values for the foundation stack (emails, names, org ID)
+platform/infra/foundation/*.tfvars
