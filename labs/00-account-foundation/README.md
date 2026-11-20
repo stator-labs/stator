@@ -52,6 +52,7 @@ _Planned:_
 - The first apply created the 3 budgets, then failed on the anomaly monitor: `Limit exceeded on dimensional spend monitor creation`. The account already had AWS's default services monitor (`aws ce get-anomaly-monitors` showed it). Fix: our own account-level monitor.
 - The first `tofu plan` in CI failed with "Not authorized to perform sts:AssumeRoleWithWebIdentity". The roles trusted `repo:yaaf-some/cloud-project:pull_request`, but this repo has immutable OIDC subjects, so the token's `sub` carries the owner and repo IDs. The trust policy had matched the code and the code was wrong; nothing in AWS showed the real value. Fix: trust the subject prefix GitHub reports, and print the token's claims (`tools/oidc-claims.py`) whenever sign-in fails.
 - `tofu plan` found no credentials: the AWS provider (`~> 5.80`) didn't read the CLI login. Fix: `eval "$(aws configure export-credentials --format env)"`. `make bootstrap` does this for you (YAA-11).
+- The anomaly monitor spec lacked `ProductAttributes`, which AWS now returns, so every plan wanted to replace the monitor. Found in the plan of the rename PR. Fix: add the key.
 
 ## What I'd change
 _TBD._

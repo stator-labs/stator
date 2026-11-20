@@ -6,7 +6,8 @@ data "aws_caller_identity" "current" {}
 resource "aws_ce_anomaly_monitor" "account" {
   name         = "runway-account"
   monitor_type = "CUSTOM"
-  # Every key is spelled out (null when unused): the API returns them, and leaving them out shows as a diff on every plan.
+  # Every key of the Expression object is spelled out (null when unused), ProductAttributes included:
+  # the API returns all 7, and leaving one out forces a replacement on every plan.
   monitor_specification = jsonencode({
     And            = null
     CostCategories = null
