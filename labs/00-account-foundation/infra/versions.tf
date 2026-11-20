@@ -9,6 +9,7 @@ terraform {
   }
 
   # Bucket comes from `-backend-config=bucket=...` so the account ID is never in code.
+  # The key keeps the folder's first name (00-ground-rules): the state was not moved on rename.
   backend "s3" {
     key          = "00-ground-rules/terraform.tfstate"
     region       = "us-west-2"

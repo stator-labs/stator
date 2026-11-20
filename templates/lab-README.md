@@ -6,7 +6,6 @@ effort: "N weekends"
 cost_estimate: "$X"
 cost_spent: 0
 roles: [Platform]   # SA, Platform, Cloud, SRE, Security, AI Infra, Defense
-linear: "P-YAA-N"
 ---
 
 # Lab NN · <Name>

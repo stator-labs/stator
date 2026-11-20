@@ -1,6 +1,6 @@
 # platform/infra
 
-OpenTofu stacks. GitHub Actions plans them on every PR and applies them after merge ([tofu.yml](../../.github/workflows/tofu.yml)). Nobody runs `tofu apply` by hand, except `make bootstrap`.
+OpenTofu stacks. GitHub Actions plans them on every PR and applies them after merge ([infrastructure.yml](../../.github/workflows/infrastructure.yml)). Nobody runs `tofu apply` by hand, except `make bootstrap`.
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`. A stack is a folder with `.tf` files.

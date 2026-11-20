@@ -1,15 +1,14 @@
 ---
 lab: "D"
-title: "Disconnected-Ready (optional)"
+title: "Disconnected Delivery (optional)"
 status: idea
 effort: "1–2 weekends"
 cost_estimate: "~$0"
 cost_spent: 0
 roles: [Defense]
-linear: "P-YAA-14"
 ---
 
-# Lab D · Disconnected-Ready (optional)
+# Lab D · Disconnected Delivery (optional)
 
 **Proof:** _not yet_
 

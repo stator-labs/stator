@@ -9,8 +9,8 @@ updated: 2026-11-14
 | What | Where | Lifetime |
 |---|---|---|
 | Lab knowledge (decisions, proof, cost, what broke) | `labs/NN-*/README.md` | as long as the lab exists |
-| Cross-lab knowledge | `kb/`, at most 8 files (see [index](index.md)) | replaced, never appended |
-| Work items, the board, handoffs between sessions | Linear: workspace `yaaf-some`, team `YAA` (may be renamed `RUN`) | closes with the issue |
+| Cross-lab knowledge | `docs/`, at most 8 files (see [index](index.md)) | replaced, never appended |
+| Work items, the board, handoffs between sessions | Linear: workspace `yaaf-some`, team `YAA` | closes with the issue |
 | Discussion of a change | the PR description and review | closes with the PR |
 | Briefing for Claude sessions | claude.ai Project "Cloud-project" → `claude/runway-control-center.md` | kept current |
 
@@ -29,17 +29,17 @@ updated: 2026-11-14
 | **Ideas** | Backlog + `Idea` label |
 
 - The `Role` label group (SA, Platform, Cloud, SRE, Security, AI Infra, Defense) shows what each issue showcases.
-- The `Control Center` label marks meta work.
+- The `Process` label marks meta work.
 - New trends never trigger a plan rewrite. They become `Idea` issues and, if worth watching, a row in [radar](radar.md).
 
 ## Sessions
 - **Control center:** a long-running Claude session that plans, dispatches and reviews. It stores nothing itself: the plan lives in Linear, the work in the repo.
 - **Cloud workers:** background Claude agents. One Linear issue each, its branch, a PR. Rules: [Tier 3](../AGENTS.md#human-in-the-loop).
-- **Local sessions:** Claude Code on Yaaf's Mac. Same rules as cloud workers. Start one with "work on YAA-NN".
+- **Local sessions:** Claude Code on Yaaf's Mac. Same rules as cloud workers. Start one with "work on <issue title> (YAA-NN)".
 - **Handoff:** every session ends with a comment on its Linear issue (what changed, what's next, open questions) and the PR link.
 - **Scheduled tasks:**
   - weekly **trend radar**: updates [radar](radar.md) and adds `Idea` issues
-  - weekly **board health**: Linear hygiene and `tools/kb-check.py`
+  - weekly **board health**: Linear hygiene and `tools/docs-lint.py`
   - one-off **re:Invent 2026 digest**: Dec 5
 
 ## Real AWS without surprise bills

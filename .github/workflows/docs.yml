@@ -1,0 +1,29 @@
+name: Docs
+
+# Runs on PRs, in the merge queue, and on every push to main (the post-merge check).
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: "Docs: lint"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The runner's own python3 (3.12 on ubuntu-24.04) is enough: the linter is stdlib-only.
+      - run: python3 --version && python3 tools/docs-lint.py

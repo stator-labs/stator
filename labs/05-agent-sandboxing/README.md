@@ -1,15 +1,14 @@
 ---
 lab: "05"
-title: "Agent Jail"
+title: "AI Agent Sandboxing"
 status: idea
 effort: "2–3 weekends"
 cost_estimate: "$1–3/session"
 cost_spent: 0
 roles: [Platform, Security, AI Infra]
-linear: "P-YAA-7"
 ---
 
-# Lab 05 · Agent Jail
+# Lab 05 · AI Agent Sandboxing
 
 **Proof:** _not yet_
 

@@ -22,15 +22,17 @@ This page says **why** and **what enforces it**. The rules are in [AGENTS.md](..
 | Gate | Covers | Where | State |
 |---|---|---|---|
 | `aws-apply` environment approval | every AWS change | GitHub environment; the apply role trusts only that environment | live |
-| `main` ruleset | no direct pushes; `kb-check` must pass | GitHub ruleset | live |
-| `tofu-gate` check | a PR that breaks `tofu-check` or `tofu-plan` cannot auto-merge; reports on every PR | `tofu.yml` | this PR; Yaaf adds it to the ruleset after merge |
-| Auto-merge is human-only | agents cannot enable auto-merge; only Yaaf's button does | `.claude/settings.json` `deny` | this PR |
-| Plan comment | what an apply will do, before merge | `tofu.yml` | live; risk summary and cost planned |
-| Claude Code `ask` / `deny` rules | merges, force pushes, `tofu apply`/`destroy`, AWS CLI, scheduled tasks, environments; reading key files | `.claude/settings.json` | this PR |
-| PR template | the change card fields on every PR | `.github/pull_request_template.md` | this PR |
-| Style check | stock phrases, em dashes | `tools/kb-check.py` | this PR |
+| `main` ruleset | no direct pushes; `Docs: lint`, `Infrastructure: required checks` and `Policy: trust paths` must pass; merge queue on | GitHub ruleset | Yaaf sets it |
+| `Infrastructure: required checks` | a PR that breaks `Infrastructure: validate` or `Infrastructure: plan` cannot merge; reports on every PR and in the queue | `infrastructure.yml` | live |
+| `Policy: trust paths` | auto-merge on a PR that touches a trust path (list in AGENTS.md); Yaaf's own Merge still works | `policy.yml`, re-run when auto-merge turns on or off | this PR |
+| Merge queue | each PR is tested on the exact result of merging into `main`, so a green PR can't merge stale | ruleset; all required checks also run on `merge_group` | this PR; Yaaf turns it on |
+| Checks on `main` | `Docs: lint` and `Infrastructure: validate` re-run on every push to `main`; `Infrastructure: apply` waits for `validate` | `docs.yml`, `infrastructure.yml` | this PR |
+| Plan comment | what an apply will do, before merge | `infrastructure.yml` | live; risk summary and cost planned |
+| Claude Code `ask` / `deny` rules | merges, force pushes, `tofu apply`/`destroy`, AWS CLI, scheduled tasks, environments; reading key files | `.claude/settings.json` | live |
+| PR template | the change card fields on every PR | `.github/pull_request_template.md` | live |
+| Style check | stock phrases, em dashes | `tools/docs-lint.py` | live |
 | Permission boundary and IAM path | roles that agents' code can create | `platform/infra/bootstrap/iam.tf` | live |
-| Budgets and anomaly alerts | cost that slips through anyway | Lab 00 stack | merged, not applied |
+| Budgets and anomaly alerts | cost that slips through anyway | Lab 00 stack | live |
 
 ## Sources
 - Anthropic, [framework for safe and trustworthy agents](https://www.anthropic.com/news/our-framework-for-developing-safe-and-trustworthy-agents): human control before high-stakes actions, plan-level approval, transparency.

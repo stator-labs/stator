@@ -1,4 +1,5 @@
-<!-- Title: <Area> · <plain name> (<issue ID>). Tiers: AGENTS.md. Card format: .claude/skills/runway-presenting/SKILL.md -->
+<!-- Title: <Area> · <what it changes>. No issue ID in the title. Naming and tiers: AGENTS.md. Card format: .claude/skills/runway-presenting/SKILL.md -->
+Linear: <issue title> (<ID>)
 
 ## What and why
 <!-- One or two sentences. Results before process. Link the issue. -->

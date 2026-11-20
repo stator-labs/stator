@@ -1,15 +1,14 @@
 ---
 lab: "06"
-title: "Who Did That? Agent Identity"
+title: "AI Agent Identity and Audit"
 status: idea
 effort: "2–3 weekends"
 cost_estimate: "$1–3/session"
 cost_spent: 0
 roles: [Security, Platform, SA]
-linear: "P-YAA-8"
 ---
 
-# Lab 06 · Who Did That? Agent Identity
+# Lab 06 · AI Agent Identity and Audit
 
 **Proof:** _not yet_
 
