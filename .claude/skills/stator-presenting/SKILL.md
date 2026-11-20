@@ -1,6 +1,6 @@
 ---
-name: runway-presenting
-description: How to report work to Yaaf and ask him for a decision in Runway. Use for handoffs, PR descriptions, Linear comments, session summaries, and every Tier 2 change card (AWS, cost, trust, deletion, public, scope).
+name: stator-presenting
+description: How to report work to Yaaf and ask him for a decision in Stator. Use for handoffs, PR descriptions, Linear comments, session summaries, and every Tier 2 change card (AWS, cost, trust, deletion, public, scope).
 ---
 
 <!--
@@ -11,7 +11,7 @@ tamdogood/builder-essential-skills@1be9984bdafbb68eaff400bdd82773a1d41ee7ec (MIT
 When to ask (the tiers) is in AGENTS.md. Why: docs/human-in-the-loop.md.
 -->
 
-# Runway presenting
+# Stator presenting
 
 Yaaf reads on a phone, between other things. He should be able to judge any request in a minute. If he can't, the request is the problem.
 

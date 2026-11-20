@@ -1,4 +1,4 @@
-<!-- Title: <Area> · <what it changes>. No issue ID in the title. Naming and tiers: AGENTS.md. Card format: .claude/skills/runway-presenting/SKILL.md -->
+<!-- Title: <Area> · <what it changes>. No issue ID in the title. Naming and tiers: AGENTS.md. Card format: .claude/skills/stator-presenting/SKILL.md -->
 Linear: <issue title> (<ID>)
 
 ## What and why

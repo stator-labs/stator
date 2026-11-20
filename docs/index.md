@@ -1,9 +1,9 @@
 ---
-title: Runway docs
+title: Stator docs
 updated: 2026-11-16
 ---
 
-# Runway docs
+# Stator docs
 
 Plain markdown. It reads the same on GitHub (web or the mobile app), in Obsidian, or in any editor. No paid sync and no plugins needed.
 

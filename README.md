@@ -1,14 +1,14 @@
-# Runway
+# Stator
 
 **A small internal platform that lets a 30-engineer company ship services *and* AI agents safely: self-service, short-lived identity, sandboxed agents, metered cost, real SLOs. Built on real AWS at $0 when idle.**
 
-> I take chaotic, manual, risky environments and make them boring, self-service and cheap. Runway is that, done in public.
+> I take chaotic, manual, risky environments and make them boring, self-service and cheap. Stator is that, done in public.
 
 ## The scenario
 
 A fictional LA company runs four workloads: a marketing site with a quote form, a catalog/orders API, a nightly batch job, and a new **support-triage AI agent** that reads tickets, queries the API and drafts replies.
 
-Today they deploy by hand, share long-lived AWS keys, can't explain their cloud or AI bill, and nobody knows which agent did what. Runway fixes that one lab at a time.
+Today they deploy by hand, share long-lived AWS keys, can't explain their cloud or AI bill, and nobody knows which agent did what. Stator fixes that one lab at a time.
 
 ```mermaid
 flowchart LR
