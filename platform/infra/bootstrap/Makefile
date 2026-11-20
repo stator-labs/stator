@@ -7,7 +7,7 @@
 # and the exported AWS credentials must survive from one command to the next.
 
 AWS_PROFILE ?= runway
-REPO        ?= yaaf-runway-proj/runway
+REPO        ?= stator-labs/stator
 ALERT_EMAIL ?=
 
 .PHONY: bootstrap plan

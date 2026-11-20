@@ -51,7 +51,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
 - The Cloud-Project environment runs `tools/cloud-setup.sh` (pinned, SHA256-checked tools). Bump a version and its hash together, then paste the file into the environment's setup script.
 - A cloud session starts on a generated `claude/<words>` branch. Don't use it: push to a branch named by the [naming rules](#naming). The session cannot delete branches; merged branches delete themselves.
 - Docker doesn't start on its own. Run `dockerd &` first.
-- Open PRs with `gh api repos/yaaf-runway-proj/runway/pulls`. `gh pr` uses GraphQL, which the proxy blocks.
+- Open PRs with `gh api repos/stator-labs/stator/pulls`. `gh pr` uses GraphQL, which the proxy blocks.
 - Never print or echo token variables.
 
 ## Naming
