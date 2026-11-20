@@ -17,7 +17,6 @@
       "Bash(gh api --method PUT *)",
       "Bash(gh secret *)",
       "Bash(gh variable *)",
-      "mcp__github__merge_pull_request",
       "mcp__github__delete_file",
       "mcp__github__update_pull_request_branch",
       "mcp__claude-code-remote__delete_trigger",
@@ -33,7 +32,13 @@
       "Read(./.env.*)",
       "Read(**/*.pem)",
       "Read(**/*.key)",
-      "Read(**/credentials*)"
+      "Read(**/credentials*)",
+      "mcp__github__merge_pull_request",
+      "mcp__github__pull_request_review_write",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr review *)",
+      "Bash(gh api *pulls/*/merge*)",
+      "Bash(gh api *pulls/*/reviews*)"
     ]
   }
 }
