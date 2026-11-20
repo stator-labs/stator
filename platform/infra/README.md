@@ -47,7 +47,7 @@ OpenTofu stacks. GitHub Actions plans them on every PR and applies them after me
 To delete a stack, merge a PR that empties it first (destroys its resources), then a PR that removes the folder. CI skips folders that no longer exist.
 
 ## Apply the foundation (Yaaf, once)
-1. Console, IAM Identity Center: enable the organization instance in `us-west-2`. It has no API.
+1. Console, IAM Identity Center: enable the organization instance in `us-east-1`. It has no API, and it can't move region later.
 2. `aws organizations list-aws-service-access-for-organization`: every service listed must be in `service_access_principals`. Add any extra to the tfvars.
 3. IAM role manager off in management: `aws cloudtrail lookup-events --region us-east-1 --lookup-attributes AttributeKey=EventName,AttributeValue=AcquireRole` should return nothing. Then `aws iam put-account-properties --properties RoleManager/Enabled=false`.
 4. Write `foundation.auto.tfvars`: `organization_id`, `labs_account_email`, `alert_email`, `sso_user`.
