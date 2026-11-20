@@ -28,7 +28,7 @@ resource "aws_iam_organizations_features" "root_access" {
 }
 
 resource "aws_organizations_organizational_unit" "labs" {
-  name      = "runway-labs"
+  name      = "stator-labs"
   parent_id = aws_organizations_organization.this.roots[0].id
 }
 
