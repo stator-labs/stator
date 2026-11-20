@@ -24,7 +24,9 @@ This page says **why** and **what enforces it**. The rules are in [AGENTS.md](..
 | `aws-apply` environment approval | every AWS change | GitHub environment; the apply role trusts only that environment | live |
 | `main` ruleset | no direct pushes; `Docs: lint`, `Infrastructure: required checks` and `Policy: trust paths` must pass; branches must be up to date | GitHub ruleset | live |
 | `Infrastructure: required checks` | a PR that breaks `Infrastructure: validate` or `Infrastructure: plan` cannot merge; reports on every PR | `infrastructure.yml` | live |
-| `Policy: trust paths` | auto-merge on a PR that touches a trust path (list in AGENTS.md); Yaaf's own Merge still works | `policy.yml`, re-run when auto-merge turns on or off | live |
+| `Policy: trust paths` | auto-merge on a PR that changes any file outside the allow-list in AGENTS.md (default deny); Yaaf's own Merge still works | `policy.yml`, run from `main` (`pull_request_target`), reads file names only, never PR code | this PR |
+| `Workflows: lint` | unpinned actions, template injection, over-broad permissions and dangerous triggers in any workflow | `workflows.yml` (zizmor); not required until it has run green | this PR |
+| Dependabot | pinned actions going stale; releases younger than 7 days are skipped | `.github/dependabot.yml`; every bump is a human-merged PR | this PR |
 | Up-to-date branches | a PR that is green alone but stale against `main` cannot merge. A merge queue needs an organization-owned repo, so this repo uses the ruleset's up-to-date setting. The workflows already run on `merge_group`, so a move to an organization needs no workflow change | ruleset | live |
 | Checks on `main` | `Docs: lint` and `Infrastructure: validate` re-run on every push to `main`; `Infrastructure: apply` waits for `validate` | `docs.yml`, `infrastructure.yml` | live |
 | Plan comment | what an apply will do, before merge | `infrastructure.yml` | live; risk summary and cost planned |

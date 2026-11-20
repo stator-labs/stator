@@ -20,8 +20,9 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md). Card format: [`runway-presenting`](.claude/skills/runway-presenting/SKILL.md).
 - **Tier 0 · Do:** reversible, private, free work: read, research, edit on a branch, run checks, comment in Linear. Report it in the handoff.
 - **Tier 1 · Review:** repo changes go in a PR, opened ready for review (not draft).
-  - **No trust path touched:** enable auto-merge. The PR merges when the required checks pass.
-  - **Trust path touched:** leave auto-merge off. Yaaf merges. Trust paths: `.github/`, `.claude/`, `AGENTS.md`, `CLAUDE.md`, `tools/`, `platform/infra/bootstrap/`, and any `.tf` change that adds or removes an `aws_iam_*` or `aws_organizations_*` line. The `Policy: trust paths` check fails a trust-path PR that has auto-merge on.
+  - **Only allow-listed files changed:** enable auto-merge on your own PR. The PR merges when the required checks pass. The allow-list: `docs/` (except `docs/how-this-works.md`, `docs/human-in-the-loop.md`, `docs/index.md` and `docs/radar.md`), `labs/*/README.md`, `templates/`, `README.md`.
+  - **Anything else changed:** leave auto-merge off. Yaaf merges. The `Policy: trust paths` check runs from `main`'s copy of its workflow, so a PR cannot change it, and it fails a PR outside the allow-list that has auto-merge on.
+  - Never enable auto-merge on a PR you did not open.
   - Never merge a PR directly.
 - **Tier 2 · Ask first.** Stop, post a **change card**, and wait for a yes. No answer means no. Any one of these is enough:
   - **AWS:** applying a stack or approving a deployment.
@@ -30,7 +31,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
   - **Deletion:** resources, data, issues, scheduled tasks, branches with unmerged work.
   - **Public:** comments on someone else's PR, posts, published pages, emails.
   - **Scope:** work past the issue's **Done when**, more than one lab, more than ~300 changed lines, or a project-wide convention (this file, the skills, the pipeline, the setup script).
-- **Tier 3 · Never:** AWS credentials in a session (AWS changes run in GitHub Actions with the Lab 00 OIDC role, or in Yaaf's terminal), running `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment, enabling auto-merge on a trust-path PR.
+- **Tier 3 · Never:** AWS credentials in a session (AWS changes run in GitHub Actions with the Lab 00 OIDC role, or in Yaaf's terminal), running `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment, enabling auto-merge on a PR outside the allow-list.
 - A yes covers one exact change. New commits, a different plan or a different target need a new yes.
 - Unsure of the tier? Treat it as Tier 2.
 
