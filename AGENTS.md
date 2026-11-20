@@ -23,7 +23,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
   - **Only allow-listed files changed:** enable auto-merge on your own PR. The PR merges when the required checks pass. The allow-list: `docs/` (except `docs/how-this-works.md`, `docs/human-in-the-loop.md`, `docs/index.md` and `docs/radar.md`), `labs/*/README.md`, `templates/`, `README.md`.
   - **Anything else changed:** leave auto-merge off. Yaaf merges. The `Policy: trust paths` check runs from `main`'s copy of its workflow, so a PR cannot change it, and it fails a PR outside the allow-list that has auto-merge on.
   - Never enable auto-merge on a PR you did not open.
-  - Never merge a PR directly.
+  - Never merge a PR directly, and never approve or review one. You act as Yaaf on GitHub, so your approval would count as his. `.claude/settings.json` denies both.
 - **Tier 2 · Ask first.** Stop, post a **change card**, and wait for a yes. No answer means no. Any one of these is enough:
   - **AWS:** applying a stack or approving a deployment.
   - **Cost:** anything above $0, idle or per run.
