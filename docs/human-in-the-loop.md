@@ -25,7 +25,7 @@ This page says **why** and **what enforces it**. The rules are in [AGENTS.md](..
 | `main` ruleset | no direct pushes; `Docs: lint`, `Infrastructure: required checks`, `Policy: trust paths` and `Workflows: lint` must pass; branches must be up to date | GitHub ruleset | live |
 | `Infrastructure: required checks` | a PR that breaks `Infrastructure: validate` or `Infrastructure: plan` cannot merge; reports on every PR | `infrastructure.yml` | live |
 | `Policy: trust paths` | auto-merge on a PR that changes any file outside the allow-list in AGENTS.md (default deny); Yaaf's own Merge still works | `policy.yml`, run from `main` (`pull_request_target`), reads file names only, never PR code | live |
-| `Workflows: lint` | unpinned actions, template injection, over-broad permissions and dangerous triggers in any workflow | `workflows.yml` (zizmor) | live |
+| `Workflows: lint` | unpinned actions, template injection, over-broad permissions and dangerous triggers (zizmor); syntax, expression and shell-script errors (actionlint with shellcheck) in any workflow | `workflows.yml` | live |
 | Dependabot | pinned actions going stale; releases younger than 7 days are skipped | `.github/dependabot.yml`; every bump is a human-merged PR | live |
 | Up-to-date branches | a PR that is green alone but stale against `main` cannot merge. A merge queue needs an organization-owned repo, so this repo uses the ruleset's up-to-date setting. The workflows already run on `merge_group`, so a move to an organization needs no workflow change | ruleset | live |
 | Checks on `main` | `Docs: lint` and `Infrastructure: validate` re-run on every push to `main`; `Infrastructure: apply` waits for `validate` | `docs.yml`, `infrastructure.yml` | live |
