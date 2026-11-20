@@ -4,11 +4,6 @@ name: Policy
 # It runs main's copy of this file (pull_request_target), so a PR cannot change the rule that
 # judges it. It never checks out or runs PR code: it reads the changed file names from the API.
 on:
-  # Temporary, for the switch-over only: main's old copy of this file has no pull_request_target
-  # trigger, so without this the PR that adds it would never be checked. The follow-up PR removes it.
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened, auto_merge_enabled, auto_merge_disabled]
   pull_request_target: # zizmor: ignore[dangerous-triggers] no PR checkout, read-only token, file names only
     branches: [main]
     # auto_merge_* re-runs the check when auto-merge is switched on or off.
