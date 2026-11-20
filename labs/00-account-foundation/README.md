@@ -43,7 +43,7 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 
 **Why trust the ID-based subject?** GitHub issues the OIDC `sub` claim in the form `repo:<owner>@<owner id>/<repo>@<repo id>:<context>`, and the roles trust exactly that. IDs never change when a repo is renamed, and a repo re-created under the same name gets a new ID, so nobody else can take over the name and assume the role. `bootstrap.sh` reads the prefix from `gh api repos/<repo>/actions/oidc/customization/sub` instead of rebuilding it from the repo name.
 
-**Why not IAM Identity Center?** It grants access to AWS accounts only through an organization instance, and an account instance rejects permission sets. One account does not need an organization. An IAM user with MFA and `aws login` gives short-lived credentials without one.
+**Why IAM Identity Center now, not the IAM user?** With one account, an IAM user with MFA was enough, and Identity Center needs an organization. Runway now has an organization with a separate labs account (`platform/infra/foundation/`). Identity Center gives one sign-in for both accounts, with a passkey and 1-hour sessions, and no long-lived IAM user left to leak. `yaaf-admin` is deleted once that sign-in works.
 
 **Why $5 / $15 / $30, and forecast only on $30?** Each step is a louder signal: $5 is the first sign a lab leaked, $15 means act today, $30 is the ceiling. An actual-spend alert fires after the money is spent. A forecast alert on the small budgets would fire on day 1 of a month, when AWS has little data. On the $30 budget it warns before the ceiling is hit.
 
