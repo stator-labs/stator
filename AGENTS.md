@@ -21,7 +21,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
 - **Tier 0 · Do:** reversible, private, free work: read, research, edit on a branch, run checks, comment in Linear. Report it in the handoff.
 - **Tier 1 · Review:** repo changes go in a PR, opened ready for review (not draft).
   - **No trust path touched:** enable auto-merge. The PR merges when the required checks pass.
-  - **Trust path touched:** leave auto-merge off. Yaaf merges. Trust paths: `.github/`, `.claude/`, `AGENTS.md`, `CLAUDE.md`, `tools/`, `platform/infra/bootstrap/`, and any `.tf` change that adds or removes an `aws_iam_*` or `aws_organizations_*` line. The `Check trust paths` check fails a trust-path PR that has auto-merge on.
+  - **Trust path touched:** leave auto-merge off. Yaaf merges. Trust paths: `.github/`, `.claude/`, `AGENTS.md`, `CLAUDE.md`, `tools/`, `platform/infra/bootstrap/`, and any `.tf` change that adds or removes an `aws_iam_*` or `aws_organizations_*` line. The `Policy: trust paths` check fails a trust-path PR that has auto-merge on.
   - Never merge a PR directly.
 - **Tier 2 · Ask first.** Stop, post a **change card**, and wait for a yes. No answer means no. Any one of these is enough:
   - **AWS:** applying a stack or approving a deployment.
@@ -65,8 +65,9 @@ A name says what the thing is or does, and reads on its own. No codes, jokes or 
 | PR link to Linear | first line of the description: `Linear: <issue title> (<ID>)` | `Linear: Budget alerts (YAA-9)` |
 | Linear issue | the outcome in plain words | `Budget alerts at $5, $15 and $30` |
 | Lab | title `NN · <Topic>`, folder `NN-<topic>`; the Linear project has the same title | `Lab 05 · AI Agent Sandboxing`, `labs/05-agent-sandboxing` |
-| Workflow | what it covers; the file has the same name | `Infrastructure`, `infrastructure.yml` |
-| CI check | verb and object, clear in the ruleset list; the summary check a ruleset requires is `<Workflow> checks passed` | `Plan infrastructure` |
+| Workflow | one noun for what it covers; the file has the same name | `Infrastructure`, `infrastructure.yml` |
+| CI check | `<Workflow>: <action>`, so checks group by workflow in the ruleset picker. A workflow with several required jobs has one `<Workflow>: required checks` job that the ruleset requires | `Infrastructure: plan` |
+| Required check | runs on `pull_request`, `merge_group` and `push` to `main`, with no path filter on the workflow, so it always reports | `Docs: lint` |
 | Scheduled task | `Runway · <what it does>` | `Runway · Weekly trend radar` |
 | AWS resource | `runway-<purpose>`, plus the required tags | `runway-budget-5` |
 

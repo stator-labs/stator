@@ -1,19 +1,24 @@
 name: Docs
 
+# Runs on PRs, in the merge queue, and on every push to main (the post-merge check).
 on:
   pull_request:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  push:
     branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: docs-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: docs-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  lint-docs:
-    name: Lint docs
+  lint:
+    name: "Docs: lint"
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

@@ -22,9 +22,11 @@ This page says **why** and **what enforces it**. The rules are in [AGENTS.md](..
 | Gate | Covers | Where | State |
 |---|---|---|---|
 | `aws-apply` environment approval | every AWS change | GitHub environment; the apply role trusts only that environment | live |
-| `main` ruleset | no direct pushes; `Lint docs`, `Infrastructure checks passed` and `Check trust paths` must pass | GitHub ruleset | live |
-| `Infrastructure checks passed` check | a PR that breaks `Validate infrastructure` or `Plan infrastructure` cannot merge; reports on every PR | `infrastructure.yml` | live |
-| `Check trust paths` check | auto-merge on a PR that touches a trust path (list in AGENTS.md); Yaaf's own Merge still works | `merge-policy.yml`, re-run when auto-merge turns on or off | this PR |
+| `main` ruleset | no direct pushes; `Docs: lint`, `Infrastructure: required checks` and `Policy: trust paths` must pass; merge queue on | GitHub ruleset | Yaaf sets it |
+| `Infrastructure: required checks` | a PR that breaks `Infrastructure: validate` or `Infrastructure: plan` cannot merge; reports on every PR and in the queue | `infrastructure.yml` | live |
+| `Policy: trust paths` | auto-merge on a PR that touches a trust path (list in AGENTS.md); Yaaf's own Merge still works | `policy.yml`, re-run when auto-merge turns on or off | this PR |
+| Merge queue | each PR is tested on the exact result of merging into `main`, so a green PR can't merge stale | ruleset; all required checks also run on `merge_group` | this PR; Yaaf turns it on |
+| Checks on `main` | `Docs: lint` and `Infrastructure: validate` re-run on every push to `main`; `Infrastructure: apply` waits for `validate` | `docs.yml`, `infrastructure.yml` | this PR |
 | Plan comment | what an apply will do, before merge | `infrastructure.yml` | live; risk summary and cost planned |
 | Claude Code `ask` / `deny` rules | merges, force pushes, `tofu apply`/`destroy`, AWS CLI, scheduled tasks, environments; reading key files | `.claude/settings.json` | live |
 | PR template | the change card fields on every PR | `.github/pull_request_template.md` | live |
