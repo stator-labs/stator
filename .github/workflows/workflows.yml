@@ -1,7 +1,8 @@
 name: Workflows
 
-# Static security lint of every workflow (zizmor): unpinned actions, template injection,
-# over-broad permissions, dangerous triggers. Reads the YAML; runs no workflow code.
+# Static lint of every workflow. Reads the YAML; runs no workflow code.
+# zizmor: security (unpinned actions, template injection, over-broad permissions, dangerous triggers).
+# actionlint: correctness (syntax, expression types, and shellcheck on every run: script).
 on:
   pull_request:
     branches: [main]
@@ -26,7 +27,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install pinned zizmor (SHA256-checked)
-        run: sudo tools/cloud-setup.sh zizmor
+      - name: Install pinned zizmor and actionlint (SHA256-checked)
+        run: sudo tools/cloud-setup.sh zizmor actionlint
       - name: zizmor
         run: zizmor --offline .github/workflows
+      - name: actionlint (with the runner's shellcheck)
+        run: actionlint -color

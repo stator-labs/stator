@@ -134,6 +134,8 @@ jobs:
           n=$(jq length <<<"$STACKS")
           limit=$(( 60000 / n ))
           failed=0
+          # The backticks are Markdown code spans, not shell expansion.
+          # shellcheck disable=SC2016
           printf '## Infrastructure plan\n\nCommit `%s`. Applies after merge, in environment `aws-apply`.\n' "$HEAD_SHA" >"$COMMENT"
           for dir in $(jq -r '.[]' <<<"$STACKS"); do
             out="$RUNNER_TEMP/plan.txt"
@@ -151,6 +153,7 @@ jobs:
             token=$(openssl rand -hex 16)
             echo "::stop-commands::$token"; cat "$out"; echo "::$token::"
             {
+              # shellcheck disable=SC2016
               printf '\n### `%s`\n%s\n\n<details><summary>Show output</summary>\n\n```\n' "$dir" "$summary"
               tail -c "$limit" "$out"
               printf '\n```\n</details>\n'
