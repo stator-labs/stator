@@ -6,7 +6,6 @@ effort: "2–3 weekends"
 cost_estimate: "$1–3/session"
 cost_spent: 0
 roles: [Platform, Security, AI Infra]
-linear: "P-YAA-7"
 ---
 
 # Lab 05 · AI Agent Sandboxing

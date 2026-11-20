@@ -10,7 +10,7 @@ updated: 2026-11-14
 |---|---|---|
 | Lab knowledge (decisions, proof, cost, what broke) | `labs/NN-*/README.md` | as long as the lab exists |
 | Cross-lab knowledge | `docs/`, at most 8 files (see [index](index.md)) | replaced, never appended |
-| Work items, the board, handoffs between sessions | Linear: workspace `yaaf-some`, team `YAA` (may be renamed `RUN`) | closes with the issue |
+| Work items, the board, handoffs between sessions | Linear: workspace `yaaf-some`, team `YAA` | closes with the issue |
 | Discussion of a change | the PR description and review | closes with the PR |
 | Briefing for Claude sessions | claude.ai Project "Cloud-project" → `claude/runway-control-center.md` | kept current |
 
@@ -35,7 +35,7 @@ updated: 2026-11-14
 ## Sessions
 - **Control center:** a long-running Claude session that plans, dispatches and reviews. It stores nothing itself: the plan lives in Linear, the work in the repo.
 - **Cloud workers:** background Claude agents. One Linear issue each, its branch, a PR. Rules: [Tier 3](../AGENTS.md#human-in-the-loop).
-- **Local sessions:** Claude Code on Yaaf's Mac. Same rules as cloud workers. Start one with "work on YAA-NN".
+- **Local sessions:** Claude Code on Yaaf's Mac. Same rules as cloud workers. Start one with "work on <issue title> (YAA-NN)".
 - **Handoff:** every session ends with a comment on its Linear issue (what changed, what's next, open questions) and the PR link.
 - **Scheduled tasks:**
   - weekly **trend radar**: updates [radar](radar.md) and adds `Idea` issues

@@ -6,7 +6,6 @@ effort: "2 weekends"
 cost_estimate: "~$0"
 cost_spent: 0
 roles: [Platform, Security, Defense]
-linear: "P-YAA-3"
 ---
 
 # Lab 01 · Supply Chain Security

@@ -6,7 +6,6 @@ effort: "2–3 weekends"
 cost_estimate: "$1–3/session"
 cost_spent: 0
 roles: [Security, Platform, SA]
-linear: "P-YAA-8"
 ---
 
 # Lab 06 · AI Agent Identity and Audit

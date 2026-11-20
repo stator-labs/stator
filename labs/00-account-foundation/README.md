@@ -6,7 +6,6 @@ effort: "1 weekend"
 cost_estimate: "~$0"
 cost_spent: 0
 roles: [SA, Platform, Cloud, SRE, Security]
-linear: "P-YAA-2"
 ---
 
 # Lab 00 · Account Foundation

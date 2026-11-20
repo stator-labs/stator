@@ -4,7 +4,7 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 
 ## Read first
 1. The claude.ai Project doc `claude/runway-control-center.md` if you can reach it. Otherwise read `docs/how-this-works.md`.
-2. The Linear issue you were given (workspace `yaaf-some`, team `YAA`, which may be renamed `RUN`).
+2. The Linear issue you were given (workspace `yaaf-some`, team `YAA`).
 3. The README of the lab you're touching.
 
 ## Hard rules
@@ -21,7 +21,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
 - **Tier 0 · Do:** reversible, private, free work: read, research, edit on a branch, run checks, comment in Linear. Report it in the handoff.
 - **Tier 1 · Review:** repo changes go in a PR, opened ready for review (not draft).
   - **No trust path touched:** enable auto-merge. The PR merges when the required checks pass.
-  - **Trust path touched:** leave auto-merge off. Yaaf merges. Trust paths: `.github/`, `.claude/`, `AGENTS.md`, `CLAUDE.md`, `tools/`, `platform/infra/bootstrap/`, and any `.tf` change that adds or removes an `aws_iam_*` or `aws_organizations_*` line. The `Check merge policy` check fails a trust-path PR that has auto-merge on.
+  - **Trust path touched:** leave auto-merge off. Yaaf merges. Trust paths: `.github/`, `.claude/`, `AGENTS.md`, `CLAUDE.md`, `tools/`, `platform/infra/bootstrap/`, and any `.tf` change that adds or removes an `aws_iam_*` or `aws_organizations_*` line. The `Check trust paths` check fails a trust-path PR that has auto-merge on.
   - Never merge a PR directly.
 - **Tier 2 · Ask first.** Stop, post a **change card**, and wait for a yes. No answer means no. Any one of these is enough:
   - **AWS:** applying a stack or approving a deployment.
@@ -35,7 +35,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
 - Unsure of the tier? Treat it as Tier 2.
 
 ## Workflow
-1. Branch from `main` as `<area>/<topic>`, for example `lab00/budgets` or `process/naming`. Area is `lab00`…`lab11`, `labd`, `platform`, `radar` (weekly radar tasks, branch `radar/YYYY-MM-DD`) or `process` (rules, skills and workflow). Don't use Linear's `gitBranchName`: an issue number says nothing. Never push to `main`.
+1. Branch from `main`, named by the [naming rules](#naming). Never push to `main`.
 2. Keep the change scoped to the issue's **Done when**. Anything new you notice (a topic, tool, lab or goal) becomes a Linear issue with the `Idea` label, not work, however small. Going further is Tier 2 (scope).
    - The same failure after two fix attempts: stop and report it. Don't keep trying.
    - Say what you skipped or deferred, and why, in the handoff and the PR.
@@ -43,15 +43,34 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
    - update the lab README (Proof, Cost receipt, Decisions, What broke) and its frontmatter `status`, and keep the root README lab table in sync
    - run `python3 tools/docs-lint.py` and fix what it reports
    - hand off in a comment on the Linear issue (format in `runway-presenting`). Then move the issue to the right state.
-   - open a PR with the template, titled `<Area> · <plain name> (<issue ID>)`, for example `Lab 00 · Budget alerts (YAA-9)`. The ID at the end links the PR to Linear. Commit subjects start with the area: `lab00: add budget alerts`.
+   - open a PR with the template, named by the [naming rules](#naming). Its first line links the Linear issue.
 4. Never mark a lab ✅ without a working proof. Record the first failed run in "What broke"; don't rerun until green and hide it.
 
 ## Cloud sessions
 - The Cloud-Project environment runs `tools/cloud-setup.sh` (pinned, SHA256-checked tools). Bump a version and its hash together, then paste the file into the environment's setup script.
-- A cloud session can push only to the branch the session was given. Use it instead of `<area>/<topic>`, and name the PR as usual. The session cannot delete branches; merged branches delete themselves.
+- A cloud session starts on a generated `claude/<words>` branch. Don't use it: push to a branch named by the [naming rules](#naming). The session cannot delete branches; merged branches delete themselves.
 - Docker doesn't start on its own. Run `dockerd &` first.
 - Open PRs with `gh api repos/yaaf-some/cloud-project/pulls`. `gh pr` uses GraphQL, which the proxy blocks.
 - Never print or echo token variables.
+
+## Naming
+A name says what the thing is or does, and reads on its own. No codes, jokes or tool jargon in a name a person reads. An ID such as `YAA-14` never stands alone: write what it is first.
+
+| Thing | Rule | Example |
+|---|---|---|
+| Branch | `<area>/<what-it-changes>`, lowercase with hyphens | `lab00/budget-alerts` |
+| Area | `lab00`…`lab11`, `labd`, `platform`, `process` (rules, skills, workflow), `radar` | `radar/2026-11-22` |
+| Commit subject | `<area>: <change, imperative>` | `lab00: add budget alerts` |
+| PR title | `<Area> · <what it changes>`, no issue ID | `Lab 00 · Budget alerts at $5, $15 and $30` |
+| PR link to Linear | first line of the description: `Linear: <issue title> (<ID>)` | `Linear: Budget alerts (YAA-9)` |
+| Linear issue | the outcome in plain words | `Budget alerts at $5, $15 and $30` |
+| Lab | title `NN · <Topic>`, folder `NN-<topic>`; the Linear project has the same title | `Lab 05 · AI Agent Sandboxing`, `labs/05-agent-sandboxing` |
+| Workflow | what it covers; the file has the same name | `Infrastructure`, `infrastructure.yml` |
+| CI check | verb and object, clear in the ruleset list; the summary check a ruleset requires is `<Workflow> checks passed` | `Plan infrastructure` |
+| Scheduled task | `Runway · <what it does>` | `Runway · Weekly trend radar` |
+| AWS resource | `runway-<purpose>`, plus the required tags | `runway-budget-5` |
+
+Don't use Linear's `gitBranchName`: an issue number says nothing.
 
 ## Docs rules (no wiki sprawl)
 - Lab knowledge goes in the lab's README. `docs/` is only for what spans several labs, with at most 8 files and 250 lines each.

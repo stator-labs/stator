@@ -6,7 +6,6 @@ effort: "2 weekends"
 cost_estimate: "$5–15"
 cost_spent: 0
 roles: [SA, Cloud]
-linear: "P-YAA-4"
 ---
 
 # Lab 02 · Serverless vs Kubernetes Cost

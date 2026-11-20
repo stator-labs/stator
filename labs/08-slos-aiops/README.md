@@ -6,7 +6,6 @@ effort: "2 weekends"
 cost_estimate: "~$0"
 cost_spent: 0
 roles: [SRE]
-linear: "P-YAA-10"
 ---
 
 # Lab 08 · SLOs and Governed AIOps

@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [main]
     # No paths filter here: "Infrastructure checks passed" is a required check and must report on every PR.
-    # `detect` decides what to plan. The push trigger keeps its filter.
+    # `detect-stacks` decides what to plan. The push trigger keeps its filter.
   push:
     branches: [main]
     paths:
@@ -35,7 +35,7 @@ env:
   TF_INPUT: "0"
 
 jobs:
-  detect:
+  detect-stacks:
     name: Detect changed stacks
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -55,7 +55,7 @@ jobs:
           echo "changed stacks: $stacks"
           echo "stacks=$stacks" >> "$GITHUB_OUTPUT"
 
-  check:
+  validate:
     name: Validate infrastructure
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
@@ -85,12 +85,12 @@ jobs:
 
   plan:
     name: Plan infrastructure
-    needs: [detect, check]
+    needs: [detect-stacks, validate]
     # Fork PRs get no OIDC token; the trust policy would refuse them anyway.
     if: >-
       github.event_name == 'pull_request'
       && github.event.pull_request.head.repo.full_name == github.repository
-      && needs.detect.outputs.stacks != '[]'
+      && needs.detect-stacks.outputs.stacks != '[]'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -108,7 +108,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-          role-session-name: tofu-plan-${{ github.run_id }}
+          role-session-name: runway-plan-${{ github.run_id }}
           retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
           mask-aws-account-id: true # default is false; the repo is public
       - name: Show OIDC claims (the role's trust policy must match them)
@@ -117,7 +117,7 @@ jobs:
       - name: tofu plan
         id: plan
         env:
-          STACKS: ${{ needs.detect.outputs.stacks }}
+          STACKS: ${{ needs.detect-stacks.outputs.stacks }}
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           # Read by any stack that declares variable "alert_email"; ignored by the rest.
           # PR plans cannot use the aws-apply environment (it accepts main only). The secret is
@@ -133,7 +133,7 @@ jobs:
           n=$(jq length <<<"$STACKS")
           limit=$(( 60000 / n ))
           failed=0
-          printf '## tofu plan\n\nCommit `%s`. Applies after merge, in environment `aws-apply`.\n' "$HEAD_SHA" >"$COMMENT"
+          printf '## Infrastructure plan\n\nCommit `%s`. Applies after merge, in environment `aws-apply`.\n' "$HEAD_SHA" >"$COMMENT"
           for dir in $(jq -r '.[]' <<<"$STACKS"); do
             out="$RUNNER_TEMP/plan.txt"
             {
@@ -176,7 +176,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const marker = '<!-- runway-tofu-plan -->';
+            const marker = '<!-- runway-infrastructure-plan -->';
             const body = `${marker}\n${fs.readFileSync(process.env.COMMENT, 'utf8')}`;
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;
@@ -191,12 +191,12 @@ jobs:
         if: steps.plan.outputs.failed == '1'
         run: exit 1
 
-  result:
+  checks-passed:
     name: Infrastructure checks passed
     # Required check for auto-merge. Always runs on PRs, even when check or plan are skipped,
     # because a skipped required check would block the PR forever.
     if: always() && github.event_name == 'pull_request'
-    needs: [detect, check, plan]
+    needs: [detect-stacks, validate, plan]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -204,10 +204,10 @@ jobs:
     steps:
       - name: Check results
         env:
-          DETECT: ${{ needs.detect.result }}
-          CHECK: ${{ needs.check.result }}
+          DETECT: ${{ needs.detect-stacks.result }}
+          CHECK: ${{ needs.validate.result }}
           PLAN: ${{ needs.plan.result }}
-          STACKS: ${{ needs.detect.outputs.stacks }}
+          STACKS: ${{ needs.detect-stacks.outputs.stacks }}
         run: |
           echo "detect=$DETECT check=$CHECK plan=$PLAN stacks=$STACKS"
           [ "$DETECT" = success ] || { echo "::error::detect did not succeed ($DETECT)"; exit 1; }
@@ -222,8 +222,8 @@ jobs:
 
   apply:
     name: Apply infrastructure
-    needs: detect
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect.outputs.stacks != '[]'
+    needs: detect-stacks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-stacks.outputs.stacks != '[]'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     environment: aws-apply # required reviewer; deployments from main only
@@ -241,7 +241,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-          role-session-name: tofu-apply-${{ github.run_id }}
+          role-session-name: runway-apply-${{ github.run_id }}
           retry-max-attempts: 3
           mask-aws-account-id: true
       - name: Show OIDC claims (the role's trust policy must match them)
@@ -249,7 +249,7 @@ jobs:
         run: python3 tools/oidc-claims.py
       - name: tofu apply
         env:
-          STACKS: ${{ needs.detect.outputs.stacks }}
+          STACKS: ${{ needs.detect-stacks.outputs.stacks }}
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
           # Read by a stack that declares variable "github_sub_prefix" (OIDC trust); ignored by the rest.

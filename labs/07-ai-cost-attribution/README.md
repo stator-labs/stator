@@ -6,7 +6,6 @@ effort: "2 weekends"
 cost_estimate: "$2–10"
 cost_spent: 0
 roles: [Cloud, Platform, SA, AI Infra]
-linear: "P-YAA-9"
 ---
 
 # Lab 07 · AI Cost Attribution

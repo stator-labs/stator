@@ -6,7 +6,6 @@ effort: "2 weekends"
 cost_estimate: "~$0"
 cost_spent: 0
 roles: [Platform]
-linear: "P-YAA-6"
 ---
 
 # Lab 04 · Golden Path

@@ -6,7 +6,6 @@ effort: "2–3 weekends"
 cost_estimate: "$1–3/session"
 cost_spent: 0
 roles: [Platform, SRE]
-linear: "P-YAA-5"
 ---
 
 # Lab 03 · Ephemeral EKS Clusters

@@ -6,7 +6,6 @@ effort: "1–2 weekends"
 cost_estimate: "<$3"
 cost_spent: 0
 roles: [SRE]
-linear: "P-YAA-12"
 ---
 
 # Lab 10 · Backup and Disaster Recovery

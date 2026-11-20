@@ -6,7 +6,6 @@ effort: "2–3 weekends"
 cost_estimate: "~$0"
 cost_spent: 0
 roles: [Platform, SA, Defense]
-linear: "P-YAA-11"
 ---
 
 # Lab 09 · On-Premises Repatriation

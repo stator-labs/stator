@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  trust-paths:
-    name: Check merge policy
+  check-trust-paths:
+    name: Check trust paths
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
