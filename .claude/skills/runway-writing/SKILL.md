@@ -47,6 +47,6 @@ Cut these AI tells:
 
 ## Formats
 - **Linear issue:** human-readable first: one or two sentences of why, then **Done when** as a bullet list. Agent detail (file lists, plans, logs) goes last, in a collapsible block that opens with `+++ Agent notes` and closes with `+++`.
-- **Naming an issue** in prose: what it is, then its ID: "budget alerts (YAA-9)". Never a bare ID. All other names: AGENTS.md, Naming.
+- **Naming an issue** in prose: what it is, then its ID: "budget alerts (RUN-9)". Never a bare ID. All other names: AGENTS.md, Naming.
 - **Lab README:** the template order. Proof first. "Why not X?" paragraphs of 2–4 sentences. "What broke" keeps the first failure as it happened.
 - **Headings:** sentence case. Titles use "·" as a separator: "Lab 05 · AI Agent Sandboxing".
