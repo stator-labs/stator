@@ -16,6 +16,7 @@ roles: [SA, Platform, Cloud, SRE, Security]
 - **Budgets:** `runway-budget-5`, `-15` and `-30` were created by [the merge run of PR #9, first attempt](https://github.com/yaaf-some/cloud-project/actions/runs/44581039403/attempts/1). The log shows `Creation complete` for each. The same run then failed on the monitor (see What broke).
 - **Reaper applied:** [run 44703993484](https://github.com/yaaf-some/cloud-project/actions/runs/44703993484) on 2026-11-20 created `runway-reaper` and its policy: `Apply complete! Resources: 2 added, 0 changed, 0 destroyed.` The `aws-apply` deployment waited for Yaaf's approval.
 - **First reaper dry run:** [run 44704490487](https://github.com/yaaf-some/cloud-project/actions/runs/44704490487), started by hand from `main` on 2026-11-20. The job signed in as `runway-reaper` with OIDC, and the tagging query step passed. No ephemeral resource exists yet, so the report is expected to be empty; the summary page was not read when this was written.
+- **Organization guardrails:** on 2026-11-20 Yaaf applied [platform/infra/foundation](../../platform/infra/foundation/) from his terminal: `Apply complete! Resources: 1 imported, 24 added, 1 changed, 0 destroyed.` Then, from the labs account as `OrganizationAccountAccessRole`: `ec2 describe-instances` in `us-west-2` returned an empty list; the same call in `eu-west-1` and `iam put-account-properties RoleManager/Enabled=true` both failed with `explicit deny in a service control policy`. The instance-type and commitment statements are not tested yet.
 - **Not proven yet:** a reaper delete, the 6-hour age check and `make nuke`. Lab 00 stays 🔨 until a reaper deletes a test resource.
 
 ## Problem
@@ -26,13 +27,14 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 - ✅ Non-root IAM admin user `yaaf-admin` with MFA, signed in with `aws login --profile runway`; no long-lived keys (YAA-10). Checked 2026-11-14: caller ARN is `user/yaaf-admin`, `list-access-keys` is empty, `AccountAccessKeysPresent=0`, `AccountMFAEnabled=1`.
 - OpenTofu pipeline (YAA-11; YAA-12 was merged into it): `make bootstrap` creates the state bucket `runway-tfstate-<account>`, the GitHub OIDC provider, `runway-plan` (PRs, read-only) and `runway-apply` (environment `aws-apply`, `main` only). PRs get `tofu plan` as a comment; merges apply after approval. CI fails any AWS provider without `default_tags` `project`, `lab`, `runway:ephemeral`. Code: [platform/infra](../../platform/infra/README.md). ✅ Ran end to end: see Proof.
 - Nightly reaper, dry run only (nightly reaper and `make nuke`, RUN-13): the role `runway-reaper` can read tags and delete nothing. `.github/workflows/reaper.yml` lists resources tagged `runway:ephemeral=true` at 03:17 UTC and writes the list to the job summary, with account numbers hidden. Code: [infra/reaper.tf](infra/reaper.tf).
+- ✅ AWS organization with a separate `runway-labs` account (RUN-33): a guardrail SCP on the labs OU (2 regions, no commitments, an instance-type allow-list, no leaving the organization, no IAM role manager), a 90-day organization trail, IAM Access Analyzer, a root sign-in email and IAM Identity Center. Applied from Yaaf's terminal only. Code: [platform/infra/foundation](../../platform/infra/foundation/).
 - Not built yet: reaper deletes (each ephemeral lab adds its own, with an age check) and `make nuke`, which waits for the first ephemeral stack (Lab 03).
 - ✅ README with proof and cost receipt (YAA-14)
 
 ## Cost receipt
 | Spent | Idle | Teardown |
 |---|---|---|
-| $0, no usage billed yet (as of 2026-11-19) | $0: budgets without actions and Anomaly Detection are free. The reaper role and the nightly run are free too (IAM roles cost nothing, and Actions minutes are free in a public repo) | `tofu destroy` of this stack; it is not ephemeral |
+| $0, no usage billed yet (as of 2026-11-19) | Cents a month for the organization trail's S3 storage. Everything else is $0: budgets without actions and Anomaly Detection are free. The reaper role and the nightly run are free too (IAM roles cost nothing, and Actions minutes are free in a public repo) | `tofu destroy` of this stack; it is not ephemeral |
 
 ## Decisions
 **Why not Terraform?** OpenTofu, picked on Nov 13. It is open source (MPL 2.0) under the Linux Foundation; Terraform moved to the BSL. It has the S3 lockfile, which removes the DynamoDB lock table. The CLI and the AWS provider are the same, so the skills carry over.
