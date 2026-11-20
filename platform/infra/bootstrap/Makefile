@@ -1,12 +1,12 @@
 # The one manual step in Runway. Run once on Yaaf's Mac; safe to rerun.
-#   aws sso login --profile runway && gh auth login   (runway = your Identity Center profile)
+#   aws sso login --profile stator && gh auth login   (stator = your Identity Center profile)
 #   make bootstrap ALERT_EMAIL=<your alert email>
 # ALERT_EMAIL can also come from the environment. It becomes an Actions secret.
 # Never commit it or store it as a variable: the repo is public.
 # The logic lives in bootstrap.sh: macOS ships make 3.81, which has no .ONESHELL,
 # and the exported AWS credentials must survive from one command to the next.
 
-AWS_PROFILE ?= runway
+AWS_PROFILE ?= stator
 REPO        ?= stator-labs/stator
 ALERT_EMAIL ?=
 

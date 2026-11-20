@@ -3,7 +3,7 @@
 #   make plan     read-only
 #   make apply    shows the plan and asks for "yes"
 
-AWS_PROFILE ?= runway
+AWS_PROFILE ?= stator
 export AWS_PROFILE
 
 .PHONY: init plan apply
