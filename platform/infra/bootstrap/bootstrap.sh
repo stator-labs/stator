@@ -31,17 +31,17 @@ echo "sub prefix: $SUB_PREFIX"
 export TF_VAR_github_sub_prefix="$SUB_PREFIX"
 
 say "AWS credentials from profile $AWS_PROFILE"
-# The AWS provider does not read the `aws login` cache; export short-lived keys
+# Export the profile's short-lived keys (Identity Center session)
 # into this process only (see Lab 00 "What broke"). Never printed.
 creds=$(aws configure export-credentials --profile "$AWS_PROFILE" --format env) \
-  || die "no credentials: run aws login --profile $AWS_PROFILE"
+  || die "no credentials: run aws sso login --profile $AWS_PROFILE"
 eval "$creds"
 unset creds AWS_PROFILE
 export AWS_REGION=us-west-2 AWS_DEFAULT_REGION=us-west-2   # same as versions.tf
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 CALLER=$(aws sts get-caller-identity --query Arn --output text)
 echo "caller: $CALLER"
-case "$CALLER" in *:root) die "signed in as root; use the yaaf-admin user" ;; esac
+case "$CALLER" in *:root) die "signed in as root; use your Identity Center user" ;; esac
 
 BUCKET=runway-tfstate-$ACCOUNT
 

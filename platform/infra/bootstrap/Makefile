@@ -1,5 +1,5 @@
 # The one manual step in Runway. Run once on Yaaf's Mac; safe to rerun.
-#   aws login --profile runway && gh auth login
+#   aws sso login --profile runway && gh auth login   (runway = your Identity Center profile)
 #   make bootstrap ALERT_EMAIL=<your alert email>
 # ALERT_EMAIL can also come from the environment. It becomes an Actions secret.
 # Never commit it or store it as a variable: the repo is public.
