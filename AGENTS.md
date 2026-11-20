@@ -4,7 +4,7 @@ You are working on **Runway** (see README.md). Yaaf owns it; you propose, he app
 
 ## Read first
 1. The claude.ai Project doc `claude/runway-control-center.md` if you can reach it. Otherwise read `docs/how-this-works.md`.
-2. The Linear issue you were given (workspace `yaaf-some`, team `YAA`).
+2. The Linear issue you were given (workspace `yaaf-some`, team Runway, key `RUN`).
 3. The README of the lab you're touching.
 
 ## Hard rules
@@ -50,7 +50,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
 - The Cloud-Project environment runs `tools/cloud-setup.sh` (pinned, SHA256-checked tools). Bump a version and its hash together, then paste the file into the environment's setup script.
 - A cloud session starts on a generated `claude/<words>` branch. Don't use it: push to a branch named by the [naming rules](#naming). The session cannot delete branches; merged branches delete themselves.
 - Docker doesn't start on its own. Run `dockerd &` first.
-- Open PRs with `gh api repos/yaaf-some/cloud-project/pulls`. `gh pr` uses GraphQL, which the proxy blocks.
+- Open PRs with `gh api repos/yaaf-runway-proj/runway/pulls`. `gh pr` uses GraphQL, which the proxy blocks.
 - Never print or echo token variables.
 
 ## Naming
@@ -62,7 +62,7 @@ A name says what the thing is or does, and reads on its own. No codes, jokes or 
 | Area | `lab00`…`lab11`, `labd`, `platform`, `process` (rules, skills, workflow), `radar` | `radar/2026-11-22` |
 | Commit subject | `<area>: <change, imperative>` | `lab00: add budget alerts` |
 | PR title | `<Area> · <what it changes>`, no issue ID | `Lab 00 · Budget alerts at $5, $15 and $30` |
-| PR link to Linear | first line of the description: `Linear: <issue title> (<ID>)` | `Linear: Budget alerts (YAA-9)` |
+| PR link to Linear | first line of the description: `Linear: <issue title> (<ID>)` | `Linear: Budget alerts (RUN-9)` |
 | Linear issue | the outcome in plain words | `Budget alerts at $5, $15 and $30` |
 | Lab | title `NN · <Topic>`, folder `NN-<topic>`; the Linear project has the same title | `Lab 05 · AI Agent Sandboxing`, `labs/05-agent-sandboxing` |
 | Workflow | one noun for what it covers; the file has the same name | `Infrastructure`, `infrastructure.yml` |
