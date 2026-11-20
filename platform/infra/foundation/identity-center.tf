@@ -1,4 +1,5 @@
-# IAM Identity Center replaces the IAM user yaaf-admin: one person, a passkey, 1-hour sessions.
+# IAM Identity Center is the only human sign-in: one person, a passkey, 1-hour sessions.
+# It replaced the IAM user yaaf-admin, deleted on 2026-11-20.
 # The organization instance is turned on once in the console first (it has no API); this stack
 # then adds the user, one permission set, and access to both accounts. The instance lives in
 # us-east-1, and an instance can't move region, so every resource here uses that provider.
@@ -39,7 +40,7 @@ resource "aws_ssoadmin_permission_set" "admin" {
 
 resource "aws_ssoadmin_managed_policy_attachment" "admin" {
   provider = aws.us_east_1
-  # checkov:skip=CKV_AWS_274:This is the one human admin, signing in with a passkey for 1 hour. It replaces yaaf-admin, which has the same policy today.
+  # checkov:skip=CKV_AWS_274:This is the one human admin, signing in with a passkey for 1 hour. It replaced yaaf-admin, which had the same policy.
   instance_arn       = local.sso_instance_arn
   permission_set_arn = aws_ssoadmin_permission_set.admin.arn
   managed_policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
