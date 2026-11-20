@@ -58,7 +58,10 @@ if want zizmor; then
 cat >"$WORK/zizmor.txt" <<'EOF'
 zizmor==1.32.0 --hash=sha256:84a6acb975accc13408786a2bd274b572537ca19c933ebbc13e78f3988562071
 EOF
-python3 -m pip install -q --root-user-action=ignore --no-deps --require-hashes --only-binary=:all: -r "$WORK/zizmor.txt"
+# Its own virtual environment: Ubuntu 24.04 refuses system-wide pip installs (PEP 668).
+python3 -m venv /opt/zizmor
+/opt/zizmor/bin/python -m pip install -q --no-deps --require-hashes --only-binary=:all: -r "$WORK/zizmor.txt"
+ln -sf /opt/zizmor/bin/zizmor "$BIN/zizmor"
 fi
 
 mkdir -p /root/.terraform.d/plugin-cache   # TF_PLUGIN_CACHE_DIR
