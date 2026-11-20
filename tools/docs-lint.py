@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lint Runway's docs: size, links, lab status and writing style.
+"""Lint Stator's docs: size, links, lab status and writing style.
 
 Checks (rules in docs/index.md):
   1. docs/ holds at most MAX_DOC_FILES files.
@@ -77,7 +77,7 @@ for lab_readme in sorted((root / "labs").glob("*/README.md")):
     elif want and want not in row:
         problems.append(f"labs/{folder}: status '{m.group(1)}' but the root README shows something else (expected {want}).")
 
-# 7. Writing style (.claude/skills/runway-writing). Stock phrases and em dashes fail.
+# 7. Writing style (.claude/skills/stator-writing). Stock phrases and em dashes fail.
 STOCK = re.compile(r"\b(seamless(ly)?|robust|leverag\w*|cutting-edge|game-chang\w*|delve|pivotal|testament to"
                    r"|in order to|due to the fact|it is important to note|best-in-class|world-class)\b", re.I)
 prose = [root / "README.md", root / "AGENTS.md", *root.glob("templates/*.md"), *root.glob("labs/*/README.md"),

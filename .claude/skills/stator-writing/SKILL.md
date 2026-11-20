@@ -1,6 +1,6 @@
 ---
-name: runway-writing
-description: How to write anything in Runway. Use for every README, docs page, PR description, Linear issue or comment, and scheduled-task prompt. Plain English from Orwell's six rules and a short ASD-STE100 baseline; Runway's issue, README and heading formats. For reports and decisions, also use runway-presenting.
+name: stator-writing
+description: How to write anything in Stator. Use for every README, docs page, PR description, Linear issue or comment, and scheduled-task prompt. Plain English from Orwell's six rules and a short ASD-STE100 baseline; Stator's issue, README and heading formats. For reports and decisions, also use stator-presenting.
 ---
 
 <!--
@@ -9,11 +9,11 @@ https://github.com/tamdogood/builder-essential-skills/tree/1be9984bdafbb68eaff40
 MIT License, Copyright (c) 2026 Tam Nguyen. Full notice: LICENSE in this folder.
 Changes: cut the creative-writing section and the workflow steps; kept the six rules
 and a shorter STE list; added the AI-tells list from skills/write-blog/reference/voice.md;
-added Runway's Linear issue and lab README formats. Reports and change cards: runway-presenting.
+added Stator's Linear issue and lab README formats. Reports and change cards: stator-presenting.
 This file replaces the "Writing style" section of AGENTS.md.
 -->
 
-# Runway writing
+# Stator writing
 
 Readers: Yaaf on a phone, a hiring manager on GitHub, the next agent. Write so each one gets the point in the first two lines.
 
@@ -26,7 +26,7 @@ Orwell's six, from "Politics and the English Language":
 5. Never use a foreign phrase, a scientific word or jargon if an everyday word exists.
 6. Break any of these rules sooner than say anything barbarous.
 
-Runway additions (a short ASD-STE100 baseline):
+Stator additions (a short ASD-STE100 baseline):
 - One statement per sentence. Short sentences.
 - Name the actor: "GitHub Actions applies the plan", not "the plan is applied".
 - One term for one thing. Don't switch between "stack", "module" and "workspace" for variety.
@@ -47,6 +47,6 @@ Cut these AI tells:
 
 ## Formats
 - **Linear issue:** human-readable first: one or two sentences of why, then **Done when** as a bullet list. Agent detail (file lists, plans, logs) goes last, in a collapsible block that opens with `+++ Agent notes` and closes with `+++`.
-- **Naming an issue** in prose: what it is, then its ID: "budget alerts (RUN-9)". Never a bare ID. All other names: AGENTS.md, Naming.
+- **Naming an issue** in prose: what it is, then its ID: "budget alerts (STAT-9)". Never a bare ID. All other names: AGENTS.md, Naming.
 - **Lab README:** the template order. Proof first. "Why not X?" paragraphs of 2–4 sentences. "What broke" keeps the first failure as it happened.
 - **Headings:** sentence case. Titles use "·" as a separator: "Lab 05 · AI Agent Sandboxing".

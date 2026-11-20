@@ -10,7 +10,7 @@ updated: 2026-11-14
 |---|---|---|
 | Lab knowledge (decisions, proof, cost, what broke) | `labs/NN-*/README.md` | as long as the lab exists |
 | Cross-lab knowledge | `docs/`, at most 8 files (see [index](index.md)) | replaced, never appended |
-| Work items, the board, handoffs between sessions | Linear: workspace `yaaf-some`, team Runway (key `RUN`) | closes with the issue |
+| Work items, the board, handoffs between sessions | Linear: workspace `yaaf-some`, team Stator (key `STAT`) | closes with the issue |
 | Discussion of a change | the PR description and review | closes with the PR |
 | Briefing for Claude sessions | claude.ai Project "Cloud-project" → `claude/runway-control-center.md` | kept current |
 

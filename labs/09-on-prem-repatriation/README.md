@@ -17,7 +17,7 @@ Steady workloads may be cheaper off the cloud; nobody has the numbers.
 
 ## What I built
 _Planned:_
-- Runway on local k3s/Talos
+- Stator on local k3s/Talos
 - KubeVirt VM workload + CloudNativePG
 - Cloud-vs-colo TCO memo for the steady-state API
 

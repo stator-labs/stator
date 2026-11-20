@@ -9,7 +9,7 @@ Agents do the work. Yaaf decides what is risky, costly or hard to undo. Everythi
 
 The aim is **few, informed decisions**, not many rubber stamps. An approval Yaaf can't judge in a minute is a bad approval request, not a careful one.
 
-This page says **why** and **what enforces it**. The rules are in [AGENTS.md](../AGENTS.md#human-in-the-loop). The change card format is in the [`runway-presenting`](../.claude/skills/runway-presenting/SKILL.md) skill.
+This page says **why** and **what enforces it**. The rules are in [AGENTS.md](../AGENTS.md#human-in-the-loop). The change card format is in the [`stator-presenting`](../.claude/skills/stator-presenting/SKILL.md) skill.
 
 ## Why it works this way
 1. **Gate by consequence, not by effort.** Blast radius, reversibility, cost and trust decide the tier, not how much work a change took. A 5-line IAM change is Tier 2; a 200-line README is Tier 1.
@@ -31,7 +31,7 @@ This page says **why** and **what enforces it**. The rules are in [AGENTS.md](..
 | Checks on `main` | `Docs: lint` and `Infrastructure: validate` re-run on every push to `main`; `Infrastructure: apply` waits for `validate` | `docs.yml`, `infrastructure.yml` | live |
 | Plan comment | what an apply will do, before merge | `infrastructure.yml` | live; risk summary and cost planned |
 | Claude Code `ask` / `deny` rules | agents never approve, review or merge a PR (deny: they act as Yaaf on GitHub, so their approval would count as his); force pushes, `tofu apply`/`destroy`, AWS CLI, scheduled tasks, environments; reading key files | `.claude/settings.json` | live |
-| `CODEOWNERS` | marks the trust paths as Yaaf's. Not a required review: agent PRs are authored as Yaaf, and GitHub doesn't let an author approve their own PR. It takes effect if agents ever get their own GitHub identity (RUN-32) | `.github/CODEOWNERS` | live |
+| `CODEOWNERS` | marks the trust paths as Yaaf's. Not a required review: agent PRs are authored as Yaaf, and GitHub doesn't let an author approve their own PR. It takes effect if agents ever get their own GitHub identity (STAT-32) | `.github/CODEOWNERS` | live |
 | PR template | the change card fields on every PR | `.github/pull_request_template.md` | live |
 | Style check | stock phrases, em dashes | `tools/docs-lint.py` | live |
 | Permission boundary and IAM path | roles that agents' code can create | `platform/infra/bootstrap/iam.tf` | live |

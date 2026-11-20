@@ -1,4 +1,4 @@
-# The one manual step in Runway. Run once on Yaaf's Mac; safe to rerun.
+# The one manual step in Stator. Run once on Yaaf's Mac; safe to rerun.
 #   aws sso login --profile stator && gh auth login   (stator = your Identity Center profile)
 #   make bootstrap ALERT_EMAIL=<your alert email>
 # ALERT_EMAIL can also come from the environment. It becomes an Actions secret.
