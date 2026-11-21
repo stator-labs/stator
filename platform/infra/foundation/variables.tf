@@ -1,7 +1,7 @@
 # Personal values go in foundation.auto.tfvars, which git ignores. Never in code: the repo is public.
 
 variable "organization_id" {
-  description = "ID of the existing AWS organization (o-...), to import it. `aws organizations describe-organization`."
+  description = "ID of the existing AWS organization (o-...), used in the trail bucket policy. `aws organizations describe-organization`."
   type        = string
   nullable    = false
 

@@ -51,10 +51,10 @@ To delete a stack, merge a PR that empties it first (destroys its resources), th
 2. `aws organizations list-aws-service-access-for-organization`: every service listed must be in `service_access_principals`. Add any extra to the tfvars.
 3. IAM role manager off in management: `aws cloudtrail lookup-events --region us-east-1 --lookup-attributes AttributeKey=EventName,AttributeValue=AcquireRole` should return nothing. Then `aws iam put-account-properties --properties RoleManager/Enabled=false`.
 4. Write `foundation.auto.tfvars`: `organization_id`, `labs_account_email`, `alert_email`, `sso_user`.
-5. `make plan`. Expect 1 import, the organization changed in place with additions only, and no destroy. Anything else: stop.
-6. `make apply`. Confirm the SNS email. In Identity Center, send your user the password email, register a passkey, and sign in to both accounts. Then delete `yaaf-admin`.
+5. Add an `import` block for the organization to `organization.tf`: `to = aws_organizations_organization.this`, `id = var.organization_id`. `make plan`. Expect 1 import, the organization changed in place with additions only, and no destroy. Anything else: stop.
+6. `make apply`. Then delete the `import` block: `tofu test` cannot run a stack that has one. Confirm the SNS email. In Identity Center, send your user the password email, register a passkey, and sign in to both accounts. Then delete `yaaf-admin`.
 
 ## Decisions
 **Why is the foundation stack terminal-only?** It changes the organization itself: accounts, SCPs and who can sign in. Giving the CI apply role those rights would let one approved PR rewrite the guardrails that limit that same role. A plan from Yaaf's terminal, read before typing `yes`, is the gate.
 
-**Why import the organization instead of creating it?** It was created in the console with centralized root access already on. The import brings it under code without recreating anything. The one risk is `service_access_principals`: a service missing from that list loses trusted access on apply, so the first plan must show additions only.
+**Why import the organization instead of creating it?** It was created in the console with centralized root access already on. The import brings it under code without recreating anything. The block is removed after the first apply (done 2026-11-20). The one risk is `service_access_principals`: a service missing from that list loses trusted access on apply, so the first plan must show additions only.
