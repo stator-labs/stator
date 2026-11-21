@@ -55,7 +55,7 @@ Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md
 - Never print or echo token variables.
 
 ## Naming
-A name says what the thing is or does, and reads on its own. No codes, jokes or tool jargon in a name a person reads. An ID such as `YAA-14` never stands alone: write what it is first.
+A name says what the thing is or does, and reads on its own. No codes, jokes or tool jargon in a name a person reads. An ID such as `STAT-14` never stands alone: write what it is first.
 
 | Thing | Rule | Example |
 |---|---|---|

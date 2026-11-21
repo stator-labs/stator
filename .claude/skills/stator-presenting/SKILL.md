@@ -5,7 +5,7 @@ description: How to report work to Yaaf and ask him for a decision in Stator. Us
 
 <!--
 Merges the human-in-the-loop draft's change card (approved 2026-11-16) with the
-presentation standard from YAA-24. Ideas, not text, from
+presentation standard from STAT-24. Ideas, not text, from
 tamdogood/builder-essential-skills@1be9984bdafbb68eaff400bdd82773a1d41ee7ec (MIT):
 "checked / not checked" from map-the-landscape, the skipped list from lead.
 When to ask (the tiers) is in AGENTS.md. Why: docs/human-in-the-loop.md.
