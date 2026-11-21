@@ -1,3 +1,7 @@
+# Organization-wide spending alerts, in the management account so they cover every account.
+# Moved here from the Lab 00 stack (STAT-36): the CI roles move to the labs account and cannot
+# manage management-account budgets. Only Yaaf applies this stack, from his terminal.
+
 locals {
   # Monthly cost budgets in USD. Only the top one also warns on forecast.
   budgets = {
