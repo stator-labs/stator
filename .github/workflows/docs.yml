@@ -27,3 +27,6 @@ jobs:
           persist-credentials: false
       # The runner's own python3 (3.12 on ubuntu-24.04) is enough: the linter is stdlib-only.
       - run: python3 --version && python3 tools/docs-lint.py
+      # Same job, so no new required check: a new one needs a ruleset change.
+      - name: No AWS account numbers or access keys in tracked files
+        run: python3 tools/identifier-check.py --self-test && python3 tools/identifier-check.py
