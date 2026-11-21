@@ -24,13 +24,13 @@ roles: [SA, Platform, Cloud, SRE, Security]
 Nobody knows what the AWS account costs, keys live in laptops, and nothing can be torn down with confidence. Before any lab touches AWS, the account needs a safety net: budgets, no static keys, remote state and a one-command teardown.
 
 ## What I built
-- Three monthly AWS Budgets: `runway-budget-5`, `-15` and `-30`. Each emails at 100% of actual spend. The $30 one also emails at 100% of forecast (YAA-9). A Cost Anomaly Detection monitor watches the whole account and sends a daily email for anomalies of $1 or more. ✅ Budgets and monitor are applied. Code: [infra/](infra/). The alert address comes from the Actions secret `ALERT_EMAIL`.
-- ✅ Human sign-in through IAM Identity Center: the user `yaaf`, a passkey, the `runway-admin` permission set with 1-hour sessions, in both accounts (STAT-33). `aws sso login --profile stator` in the terminal. No IAM users and no long-lived keys: the IAM user `yaaf-admin` (YAA-10) was deleted on 2026-11-20.
-- OpenTofu pipeline (YAA-11; YAA-12 was merged into it): `make bootstrap` creates the state bucket `runway-tfstate-<account>`, the GitHub OIDC provider, `runway-plan` (PRs, read-only) and `runway-apply` (environment `aws-apply`, `main` only). PRs get `tofu plan` as a comment; merges apply after approval. CI fails any AWS provider without `default_tags` `project`, `lab`, `runway:ephemeral`. Code: [platform/infra](../../platform/infra/README.md). ✅ Ran end to end: see Proof.
+- Three monthly AWS Budgets: `runway-budget-5`, `-15` and `-30`. Each emails at 100% of actual spend. The $30 one also emails at 100% of forecast (STAT-9). A Cost Anomaly Detection monitor watches the whole account and sends a daily email for anomalies of $1 or more. ✅ Budgets and monitor are applied. Code: [infra/](infra/). The alert address comes from the Actions secret `ALERT_EMAIL`.
+- ✅ Human sign-in through IAM Identity Center: the user `yaaf`, a passkey, the `runway-admin` permission set with 1-hour sessions, in both accounts (STAT-33). `aws sso login --profile stator` in the terminal. No IAM users and no long-lived keys: the IAM user `yaaf-admin` (STAT-10) was deleted on 2026-11-20.
+- OpenTofu pipeline (STAT-11; STAT-12 was merged into it): `make bootstrap` creates the state bucket `runway-tfstate-<account>`, the GitHub OIDC provider, `runway-plan` (PRs, read-only) and `runway-apply` (environment `aws-apply`, `main` only). PRs get `tofu plan` as a comment; merges apply after approval. CI fails any AWS provider without `default_tags` `project`, `lab`, `runway:ephemeral`. Code: [platform/infra](../../platform/infra/README.md). ✅ Ran end to end: see Proof.
 - Nightly reaper, dry run only (nightly reaper and `make nuke`, STAT-13): the role `runway-reaper` can read tags and delete nothing. `.github/workflows/reaper.yml` lists resources tagged `runway:ephemeral=true` at 03:17 UTC and writes the list to the job summary, with account numbers hidden. Code: [infra/reaper.tf](infra/reaper.tf).
 - ✅ AWS organization with a separate `runway-labs` account (STAT-33): a guardrail SCP on the labs OU (2 regions, no commitments, an instance-type allow-list, no leaving the organization, no IAM role manager), a 90-day organization trail, IAM Access Analyzer, a root sign-in email and IAM Identity Center. Applied from Yaaf's terminal only. Code: [platform/infra/foundation](../../platform/infra/foundation/).
 - Not built yet: reaper deletes (each ephemeral lab adds its own, with an age check) and `make nuke`, which waits for the first ephemeral stack (Lab 03).
-- ✅ README with proof and cost receipt (YAA-14)
+- ✅ README with proof and cost receipt (STAT-14)
 
 ## Cost receipt
 | Spent | Idle | Teardown |
@@ -59,12 +59,12 @@ Nobody knows what the AWS account costs, keys live in laptops, and nothing can b
 **Why not an immediate anomaly alert?** AWS allows the IMMEDIATE frequency only for SNS subscribers. Email gets DAILY or WEEKLY. DAILY is the fastest email option. An SNS topic needs a topic policy for `costalerts.amazonaws.com` and a confirmed subscription: more moving parts than the alert is worth at this size. The $5 budget covers fast spikes.
 
 ## What broke
-- The first sign-in was as **root**. Fixed in YAA-10.
+- The first sign-in was as **root**. Fixed in STAT-10.
 - `sso-admin create-instance` is refused for an organization's management account.
 - After deleting the organization, an account instance of Identity Center rejected `create-permission-set`: account instances can't grant access to AWS accounts. Dropped Identity Center.
 - The first apply created the 3 budgets, then failed on the anomaly monitor ([run log](https://github.com/yaaf-some/cloud-project/actions/runs/44581039403/attempts/1)). A rerun of the same run failed the same way: `Limit exceeded on dimensional spend monitor creation`. The account already had AWS's default services monitor (`aws ce get-anomaly-monitors` showed it). Fix: our own account-level monitor.
 - The first `tofu plan` in CI failed with "Not authorized to perform sts:AssumeRoleWithWebIdentity". The roles trusted `repo:yaaf-some/cloud-project:pull_request`, but this repo has immutable OIDC subjects, so the token's `sub` carries the owner and repo IDs. The trust policy had matched the code and the code was wrong; nothing in AWS showed the real value. Fix: trust the subject prefix GitHub reports, and print the token's claims (`tools/oidc-claims.py`) whenever sign-in fails.
-- `tofu plan` found no credentials: the AWS provider (`~> 5.80`) didn't read the CLI login. Fix: `eval "$(aws configure export-credentials --format env)"`. `make bootstrap` does this for you (YAA-11).
+- `tofu plan` found no credentials: the AWS provider (`~> 5.80`) didn't read the CLI login. Fix: `eval "$(aws configure export-credentials --format env)"`. `make bootstrap` does this for you (STAT-11).
 - The anomaly monitor spec lacked `ProductAttributes`, which AWS now returns, so every plan wanted to replace the monitor. Found in the plan of the rename PR. Fix: add the key.
 - Three stray budgets from an earlier manual attempt (`runway-monthly-5usd`, `-15usd`, `-30usd`) doubled the budget list. Yaaf deleted them by hand on Nov 19. The pipeline's `runway-budget-*` stayed.
 - The `aws-apply` run for PR #8 stayed in "waiting" for five days. Yaaf had to reject it by hand on Nov 19 (it shows as cancelled).

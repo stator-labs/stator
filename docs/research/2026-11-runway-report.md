@@ -7,7 +7,7 @@ status: foundation
 
 # Runway: a portfolio and lab plan for a platform/cloud engineer entering the 2027 LA market
 
-> Deep research report, Nov 13, 2026. Runway is built on it. Claims marked *unverified* in the Caveats section need checking before you cite them (Linear YAA-15). Sources are listed at the end.
+> Deep research report, Nov 13, 2026. Runway is built on it. Claims marked *unverified* in the Caveats section need checking before you cite them (Linear STAT-15). Sources are listed at the end.
 
 Build one coherent, cheap, real-AWS project. Call it **"Runway"**: a small internal platform that lets a 30-engineer company ship services *and* AI agents safely. Deliver it as an any-order menu of labs, each taking one to three weekends. Each lab produces a working artifact, a cost receipt and a short "what I'd change" write-up.
 
@@ -136,7 +136,7 @@ Use independent labs, one README template, decisions written inline, and a Now/N
 
 Its pain points are manual deploys, shared long-lived keys, unknown cloud and AI bills, and nobody knowing which agent did what.
 
-**Lab menu:** see the root README and the Linear projects (P-YAA-2 to P-YAA-14).
+**Lab menu:** see the root README and the Linear projects (P-STAT-2 to P-STAT-14).
 
 **Suggested order:** 0 → 1 → 2 → 3 → 5 → 7 (about 10–12 weekends), then 6, 8 and 10.
 
@@ -164,7 +164,7 @@ Its pain points are manual deploys, shared long-lived keys, unknown cloud and AI
 - SaaSpocalypse figures vary by source and time window.
 - re:Invent 2026 may change AWS-specific details.
 - Clearance guidance is informational, not legal advice.
-- **Unverified leads**, to check before citing (Linear YAA-15):
+- **Unverified leads**, to check before citing (Linear STAT-15):
   - SOCI for Lambda Managed Instances
   - ECS Spot consolidation
   - Security Hub SBOM inventory
