@@ -1,0 +1,3 @@
+{
+  "install": "bash tools/antigravity-setup.sh"
+}
