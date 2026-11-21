@@ -34,10 +34,15 @@ variable "labs_account_email" {
 }
 
 variable "alert_email" {
-  description = "Where root sign-in alerts go."
+  description = "Where root sign-in, budget and cost anomaly alerts go. Never commit it: the repo is public."
   type        = string
   sensitive   = true
   nullable    = false
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alert_email))
+    error_message = "alert_email must be an email address."
+  }
 }
 
 variable "sso_user" {

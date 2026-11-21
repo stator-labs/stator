@@ -1,4 +1,4 @@
-data "aws_caller_identity" "current" {}
+# Moved here from the Lab 00 stack together with the budgets (see budgets.tf).
 
 # AWS allows one "AWS services" monitor per account and creates it itself (Default-Services-Monitor),
 # so a second one is refused ("Limit exceeded on dimensional spend monitor creation").
@@ -14,7 +14,7 @@ resource "aws_ce_anomaly_monitor" "account" {
     Dimensions = {
       Key          = "LINKED_ACCOUNT"
       MatchOptions = null
-      Values       = [data.aws_caller_identity.current.account_id]
+      Values       = [local.account_id]
     }
     Not               = null
     Or                = null
@@ -24,7 +24,7 @@ resource "aws_ce_anomaly_monitor" "account" {
 }
 
 # AWS allows IMMEDIATE frequency only for SNS subscribers; email gets DAILY or WEEKLY.
-# DAILY is the fastest email option. See "Why not an immediate alert?" in the Lab 00 README.
+# DAILY is the fastest email option. See "Why not an immediate anomaly alert?" in the Lab 00 README.
 resource "aws_ce_anomaly_subscription" "email" {
   name             = "runway-anomaly-email"
   frequency        = "DAILY"
