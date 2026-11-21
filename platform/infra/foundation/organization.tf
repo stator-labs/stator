@@ -4,12 +4,8 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
 }
 
-# The organization already exists (created in the console). Import it, don't create it.
-import {
-  to = aws_organizations_organization.this
-  id = var.organization_id
-}
-
+# The organization was created in the console and imported by the first apply (2026-11-20).
+# The import block was removed afterwards: `tofu test` cannot run a stack that has one.
 resource "aws_organizations_organization" "this" {
   feature_set                   = "ALL"
   enabled_policy_types          = ["SERVICE_CONTROL_POLICY"]
