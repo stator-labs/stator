@@ -250,6 +250,14 @@ run "anomaly_alert_is_daily_email_from_1_dollar" {
   command = plan
 
   assert {
+    condition = toset(jsondecode(aws_ce_anomaly_monitor.account.monitor_specification).Dimensions.Values) == toset([
+      "111111111111",
+      aws_organizations_account.labs.id,
+    ])
+    error_message = "The anomaly monitor must watch both the management and labs accounts."
+  }
+
+  assert {
     condition     = aws_ce_anomaly_subscription.email.frequency == "DAILY"
     error_message = "Email subscribers can only get DAILY or WEEKLY. DAILY is the fastest."
   }
