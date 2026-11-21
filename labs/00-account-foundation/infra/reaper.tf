@@ -2,6 +2,7 @@
 # It can only look: tag:GetResources. Each ephemeral lab adds the delete actions for its own
 # services from its own stack, on the role name "runway-reaper".
 
+data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
