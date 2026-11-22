@@ -2,7 +2,7 @@
 
 # AWS allows one "AWS services" monitor per account and creates it itself (Default-Services-Monitor),
 # so a second one is refused ("Limit exceeded on dimensional spend monitor creation").
-# This monitor is ours instead: it watches the whole account. See the Lab 00 README, Decisions.
+# This monitor is ours instead: it watches the management and labs accounts. See the Lab 00 README, Decisions.
 resource "aws_ce_anomaly_monitor" "account" {
   name         = "runway-account"
   monitor_type = "CUSTOM"
@@ -14,7 +14,7 @@ resource "aws_ce_anomaly_monitor" "account" {
     Dimensions = {
       Key          = "LINKED_ACCOUNT"
       MatchOptions = null
-      Values       = [local.account_id]
+      Values       = [local.account_id, aws_organizations_account.labs.id]
     }
     Not               = null
     Or                = null
