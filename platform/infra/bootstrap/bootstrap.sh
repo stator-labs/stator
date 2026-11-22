@@ -81,27 +81,33 @@ fi
 
 PLAN_ROLE=$(tofu output -raw plan_role_arn)
 APPLY_ROLE=$(tofu output -raw apply_role_arn)
+FOUNDATION_PLAN_ROLE=$(tofu output -raw foundation_plan_role_arn)
+FOUNDATION_APPLY_ROLE=$(tofu output -raw foundation_apply_role_arn)
 REGION=$(tofu output -raw region)
 
-say "GitHub environment aws-apply on $REPO"
+say "GitHub environments aws-apply and aws-foundation-apply on $REPO"
 USER_ID=$(gh api user --jq .id)
-gh api -X PUT "repos/$REPO/environments/aws-apply" --input - >/dev/null <<JSON
+for env_name in aws-apply aws-foundation-apply; do
+  gh api -X PUT "repos/$REPO/environments/$env_name" --input - >/dev/null <<JSON
 {
   "reviewers": [{"type": "User", "id": $USER_ID}],
   "prevent_self_review": false,
   "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}
 }
 JSON
-if ! gh api "repos/$REPO/environments/aws-apply/deployment-branch-policies" \
-     --jq '.branch_policies[] | select(.type == "branch") | .name' | grep -qx main; then
-  gh api -X POST "repos/$REPO/environments/aws-apply/deployment-branch-policies" \
-    -f name=main -f type=branch >/dev/null
-fi
+  if ! gh api "repos/$REPO/environments/$env_name/deployment-branch-policies" \
+       --jq '.branch_policies[] | select(.type == "branch") | .name' | grep -qx main; then
+    gh api -X POST "repos/$REPO/environments/$env_name/deployment-branch-policies" \
+      -f name=main -f type=branch >/dev/null
+  fi
+done
 
 say "Repo variables and secret"
 set_var() { gh variable set "$1" --repo "$REPO" --body "$2"; }
 set_var AWS_PLAN_ROLE_ARN "$PLAN_ROLE"
 set_var AWS_APPLY_ROLE_ARN "$APPLY_ROLE"
+set_var AWS_FOUNDATION_PLAN_ROLE_ARN "$FOUNDATION_PLAN_ROLE"
+set_var AWS_FOUNDATION_APPLY_ROLE_ARN "$FOUNDATION_APPLY_ROLE"
 set_var TF_STATE_BUCKET "$BUCKET"
 set_var AWS_REGION "$REGION"
 # Not secret (owner and repo IDs are public). Stacks that create roles GitHub Actions may assume

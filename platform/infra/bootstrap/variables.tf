@@ -28,3 +28,9 @@ variable "apply_environment" {
   type        = string
   default     = "aws-apply"
 }
+
+variable "foundation_apply_environment" {
+  description = "GitHub environment whose jobs may assume the management foundation apply role."
+  type        = string
+  default     = "aws-foundation-apply"
+}
