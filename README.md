@@ -60,6 +60,6 @@ templates/   the one lab README template
 
 Work is tracked in Linear. How the project runs is described in [docs/how-this-works.md](docs/how-this-works.md).
 
-## How I used AI on this repo
+## How I use AI on this repo
 
-Claude helped plan the project and works some issues as a background agent. Every change arrives as a pull request that I review. Agents never get AWS credentials: anything that touches AWS goes through GitHub Actions with a short-lived OIDC role. Times the AI was wrong get logged in the lab's "What broke" section.
+AI agents write code, tests and docs on branches and open pull requests. They never hold AWS credentials: AWS runs through GitHub Actions via short-lived OIDC roles. Every AI mistake stays logged in the lab's "What broke" section.

@@ -77,11 +77,11 @@ for lab_readme in sorted((root / "labs").glob("*/README.md")):
     elif want and want not in row:
         problems.append(f"labs/{folder}: status '{m.group(1)}' but the root README shows something else (expected {want}).")
 
-# 7. Writing style (.claude/skills/stator-writing). Stock phrases and em dashes fail.
+# 7. Writing style (.agents/skills/stator-writing). Stock phrases and em dashes fail.
 STOCK = re.compile(r"\b(seamless(ly)?|robust|leverag\w*|cutting-edge|game-chang\w*|delve|pivotal|testament to"
                    r"|in order to|due to the fact|it is important to note|best-in-class|world-class)\b", re.I)
 prose = [root / "README.md", root / "AGENTS.md", *root.glob("templates/*.md"), *root.glob("labs/*/README.md"),
-         *(root / "platform").rglob("README.md"), *(root / "tools").glob("*.md"),
+         *(root / ".agents").rglob("*.md"), *(root / "platform").rglob("README.md"), *(root / "tools").glob("*.md"),
          *(p for p in docs.rglob("*.md") if "research" not in p.relative_to(docs).parts)]
 for p in sorted(p for p in set(prose) if p.exists() and ours(p)):
     fenced = False

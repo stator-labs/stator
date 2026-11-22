@@ -1,85 +1,74 @@
-# AGENTS.md: rules for any AI agent working in this repo
+# AGENTS.md: rules for any AI agent working in Stator
 
-You are working on **Stator** (see README.md). Yaaf owns it; you propose, he approves.
+Yaaf owns Stator (see `README.md`). You propose; he approves real risk.
 
 ## Read first
-1. The claude.ai Project doc `claude/runway-control-center.md` if you can reach it. Otherwise read `docs/how-this-works.md`.
-2. The Linear issue you were given (workspace `yaaf-some`, team Stator, key `STAT`).
+1. Linear `Process` docs (`P-STAT-1`): `Control center · Architecture, invariants, and free-tier stack` and `Roadmap · Execution tracks and rebuilt scheduled automation`. Also read `docs/how-this-works.md`.
+2. Your Linear issue (workspace `yaaf-some`, team `Stator`, key `STAT`).
 3. The README of the lab you're touching.
 
 ## Hard rules
-- **Fresh project.** Don't bring in earlier experiments (Floci, Online Boutique, SpinKube, "Harborline") unless they bring a clearly argued benefit.
-- **No phases, no ADRs.** Labs are independent. Record decisions inline in the lab README as short "Why not X?" paragraphs (2–4 sentences).
-- **Airgap is not a requirement.** Angular/Node are not required.
-- **Real AWS beats emulation.** AWS Emulator, kind and k3d are for the inner loop only.
-- **When Yaaf says something is "not used" or "irrelevant", delete it.** Don't keep it "just in case".
-- **$0 idle.** Everything you create in AWS is tagged `project=runway`, `lab=<nn>`, `runway:ephemeral=true|false` and has a teardown path.
-- **Supply chain:** pin GitHub Actions by commit SHA and container images by digest. Never add a dependency without saying why.
+- **Fresh project.** Don't import old experiments (Floci, Online Boutique, SpinKube, "Harborline") without a clear reason.
+- **No phases, no ADRs.** Labs stand alone. Record choices inline as short "Why not X?" notes (2–3 sentences).
+- **Real AWS beats emulation.** AWS Emulator, kind and k3d are inner-loop only.
+- **Delete what Yaaf drops.** Never keep "just in case".
+- **$0 idle.** Tag every AWS resource (`project`, `lab`, `ephemeral`) and give it a teardown path.
+- **Supply chain:** pin GitHub Actions by commit SHA and images by digest. Explain every new dependency.
+
+## Writing and tone
+Follow [`.agents/skills/stator-writing/SKILL.md`](.agents/skills/stator-writing/SKILL.md) (Orwell's six rules) and [`.agents/skills/stator-presenting/SKILL.md`](.agents/skills/stator-presenting/SKILL.md) everywhere: docs, PRs, tickets, comments and chat replies.
+- Write like a human teammate. Cut filler. Short sentences. Numbers beat adjectives.
+- Never repeat empty fields ("Cost: $0", "Security: None", "Skipped: Nothing").
+- No em dashes in prose.
 
 ## Human in the loop
-Why, and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md). Card format: [`stator-presenting`](.claude/skills/stator-presenting/SKILL.md).
-- **Tier 0 · Do:** reversible, private, free work: read, research, edit on a branch, run checks, comment in Linear. Report it in the handoff.
-- **Tier 1 · Review:** repo changes go in a PR, opened ready for review (not draft).
-  - **Only allow-listed files changed:** enable auto-merge on your own PR. The PR merges when the required checks pass. The allow-list: `docs/` (except `docs/how-this-works.md`, `docs/human-in-the-loop.md`, `docs/index.md` and `docs/radar.md`), `labs/*/README.md`, `templates/`, `README.md`.
-  - **Anything else changed:** leave auto-merge off. Yaaf merges. The `Policy: trust paths` check runs from `main`'s copy of its workflow, so a PR cannot change it, and it fails a PR outside the allow-list that has auto-merge on.
-  - Never enable auto-merge on a PR you did not open.
-  - Never merge a PR directly, and never approve or review one. You act as Yaaf on GitHub, so your approval would count as his. `.claude/settings.json` denies both.
-- **Tier 2 · Ask first.** Stop, post a **change card**, and wait for a yes. No answer means no. Any one of these is enough:
+Why and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md).
+- **Tier 0 · Do:** read, research, edit on a branch, run local checks, comment in Linear.
+- **Tier 1 · PR:** open ready for review (not draft).
+  - **Allow-listed files only:** enable auto-merge on your own PR. Allow-list: `docs/` (except `docs/how-this-works.md`, `docs/human-in-the-loop.md`, `docs/index.md`, `docs/radar.md`), `labs/*/README.md`, `templates/`, `README.md`.
+  - **Anything else:** leave auto-merge off. `Policy: trust paths` enforces this from `main`.
+  - Never merge, review or approve a PR. `.agents/hooks/guardrails.py` blocks both.
+- **Tier 2 · Ask first:** stop, send a short risk ask (`.agents/skills/stator-presenting/SKILL.md`), and wait for a yes. Triggers:
   - **AWS:** applying a stack or approving a deployment.
   - **Cost:** anything above $0, idle or per run.
-  - **Trust:** IAM, OIDC, rulesets, environments, secrets, tokens, network, connectors, `.claude/settings.json`.
-  - **Deletion:** resources, data, issues, scheduled tasks, branches with unmerged work.
-  - **Public:** comments on someone else's PR, posts, published pages, emails.
-  - **Scope:** work past the issue's **Done when**, more than one lab, more than ~300 changed lines, or a project-wide convention (this file, the skills, the pipeline, the setup script).
-- **Tier 3 · Never:** AWS credentials in a session (AWS changes run in GitHub Actions with the Lab 00 OIDC role, or in Yaaf's terminal), running `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deployment, enabling auto-merge on a PR outside the allow-list.
-- A yes covers one exact change. New commits, a different plan or a different target need a new yes.
-- Unsure of the tier? Treat it as Tier 2.
+  - **Trust:** IAM, OIDC, rulesets, environments, secrets, tokens, network, `.agents/hooks*`.
+  - **Deletion:** resources, data, issues, schedules, unmerged branches.
+  - **Public:** comments on others' PRs, posts, emails.
+  - **Scope:** work past **Done when**, >1 lab, >~300 changed lines, or repo-wide rules/pipelines.
+- **Tier 3 · Never:** AWS credentials in an agent session, running `make bootstrap`, disabling a guardrail, force-pushing `main`, approving your own deploy, or auto-merging outside the allow-list.
+- A yes covers one exact change. Unsure of the tier? Treat it as Tier 2.
 
 ## Workflow
-1. Branch from `main`, named by the [naming rules](#naming). Never push to `main`.
-2. Keep the change scoped to the issue's **Done when**. Anything new you notice (a topic, tool, lab or goal) becomes a Linear issue with the `Idea` label, not work, however small. Going further is Tier 2 (scope).
-   - The same failure after two fix attempts: stop and report it. Don't keep trying.
-   - Say what you skipped or deferred, and why, in the handoff and the PR.
+1. Branch from `main` using the naming rules below. Never push to `main`.
+2. Stay inside the issue's **Done when**. Log anything new as a Linear `Idea` issue. Same failure twice: stop and report.
 3. Before finishing:
-   - update the lab README (Proof, Cost receipt, Decisions, What broke) and its frontmatter `status`, and keep the root README lab table in sync
-   - run `python3 tools/docs-lint.py` and fix what it reports
-   - hand off in a comment on the Linear issue (format in `stator-presenting`). Then move the issue to the right state.
-   - open a PR with the template, named by the [naming rules](#naming). Its first line links the Linear issue.
-4. Never mark a lab ✅ without a working proof. Record the first failed run in "What broke"; don't rerun until green and hide it.
+   - update the lab README (Proof, Cost receipt, Decisions, What broke) and keep the root README table in sync
+   - run `python3 tools/docs-lint.py` and `python3 tools/identifier-check.py`
+   - post a short handoff (4–6 lines) on the Linear issue and update its state
+   - open a PR using `.github/pull_request_template.md`, linking the Linear issue on line 1
+4. Never mark a lab ✅ without real proof. Keep the first failure in "What broke".
 
 ## Cloud sessions
-- The Cloud-Project environment runs `tools/cloud-setup.sh` (pinned, SHA256-checked tools). Bump a version and its hash together, then paste the file into the environment's setup script.
-- A cloud session starts on a generated `claude/<words>` branch. Don't use it: push to a branch named by the [naming rules](#naming). The session cannot delete branches; merged branches delete themselves.
-- Docker doesn't start on its own. Run `dockerd &` first.
-- Open PRs with `gh api repos/stator-labs/stator/pulls`. `gh pr` uses GraphQL, which the proxy blocks.
-- Never print or echo token variables.
+- Cloud VMs run `tools/cloud-setup.sh` or `tools/antigravity-setup.sh` (shared SHA256 pins).
+- Push to a properly named branch, not an auto-generated one.
+- Open PRs with `gh api repos/stator-labs/stator/pulls` (`gh pr` uses GraphQL).
+- Never echo token variables.
 
 ## Naming
-A name says what the thing is or does, and reads on its own. No codes, jokes or tool jargon in a name a person reads. An ID such as `STAT-14` never stands alone: write what it is first.
+Plain words that read on their own. Never use a bare issue ID: write what it is first ("budget alerts (STAT-9)").
 
 | Thing | Rule | Example |
 |---|---|---|
-| Branch | `<area>/<what-it-changes>`, lowercase with hyphens | `lab00/budget-alerts` |
-| Area | `lab00`…`lab11`, `labd`, `platform`, `process` (rules, skills, workflow), `radar` | `radar/2026-11-22` |
-| Commit subject | `<area>: <change, imperative>` | `lab00: add budget alerts` |
-| PR title | `<Area> · <what it changes>`, no issue ID | `Lab 00 · Budget alerts at $5, $15 and $30` |
-| PR link to Linear | first line of the description: `Linear: <issue title> (<ID>)` | `Linear: Budget alerts (STAT-9)` |
-| Linear issue | the outcome in plain words | `Budget alerts at $5, $15 and $30` |
-| Lab | title `NN · <Topic>`, folder `NN-<topic>`; the Linear project has the same title | `Lab 05 · AI Agent Sandboxing`, `labs/05-agent-sandboxing` |
-| Workflow | one noun for what it covers; the file has the same name | `Infrastructure`, `infrastructure.yml` |
-| CI check | `<Workflow>: <action>`, so checks group by workflow in the ruleset picker. A workflow with several required jobs has one `<Workflow>: required checks` job that the ruleset requires | `Infrastructure: plan` |
-| Required check | runs on `pull_request`, `merge_group` and `push` to `main`, with no path filter on the workflow, so it always reports | `Docs: lint` |
-| Scheduled task | `Stator · <what it does>` | `Stator · Weekly trend radar` |
-| AWS resource | `runway-<purpose>`, plus the required tags | `runway-budget-5` |
-
-Don't use Linear's `gitBranchName`: an issue number says nothing.
+| Branch | `<area>/<what-it-changes>` | `lab00/budget-alerts` |
+| Area | `lab00`…`lab11`, `labd`, `platform`, `process`, `radar` | `radar/2026-11-22` |
+| Commit | `<area>: <change, imperative>` | `lab00: add budget alerts` |
+| PR title | `<Area> · <what it changes>` (no issue ID) | `Lab 00 · Budget alerts at $5, $15 and $30` |
+| PR link | Line 1: `Linear: <title> (<ID>)` | `Linear: Budget alerts (STAT-9)` |
+| Lab | `NN · <Topic>`, folder `NN-<topic>` | `Lab 05 · AI Agent Sandboxing` |
+| Workflow | One noun, matching filename | `Infrastructure`, `infrastructure.yml` |
+| CI check | `<Workflow>: <action>` | `Infrastructure: plan` |
+| AWS resource | `stator-<purpose>` (legacy management: `runway-*`) | `stator-plan` |
 
 ## Docs rules (no wiki sprawl)
-- Lab knowledge goes in the lab's README. `docs/` is only for what spans several labs, with at most 8 files and 250 lines each.
-- Never create session, meeting or status notes in the repo. Those belong in Linear and the PR.
-- Replace instead of appending. Delete anything stale; git history is the archive.
-- Full rules: `docs/index.md`.
-
-## Writing and presenting
-- **Writing:** [`stator-writing`](.claude/skills/stator-writing/SKILL.md) for every doc, PR, Linear issue, comment and scheduled-task prompt. Short sentences, numbers over adjectives, no em dashes in prose.
-- **Presenting:** [`stator-presenting`](.claude/skills/stator-presenting/SKILL.md) for handoffs, PR descriptions and decisions. Result first, tables for comparisons, Mermaid when trust or structure changes, a change card for Tier 2.
+- Lab knowledge lives in `labs/NN-*/README.md`. `docs/` holds cross-lab docs only (<= 8 files, <= 250 lines each).
+- No session, meeting or status notes in git. Replace instead of appending. Full rules: `docs/index.md`.

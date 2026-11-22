@@ -1,6 +1,6 @@
 ---
 title: Trend radar
-updated: 2026-11-19
+updated: 2026-11-22
 max_rows: 25
 ---
 
@@ -26,3 +26,4 @@ One table, at most 25 rows. **Adopted** rows move into the lab README that uses 
 | KubeCon NA graduations | Graduated: OpenTelemetry, NATS, Kubeflow, Buildpacks, Karmada, KubeVirt. Incubating: CloudNativePG, HAMi and others | Lab 09 uses KubeVirt and CloudNativePG | ✔ | 2026-11-15 | [CNCF, Nov 10](https://www.cncf.io/announcements/2026/11/10/cncf-hits-major-milestones-with-global-community-growth-record-industry-investment-and-a-new-generation-of-projects-to-build-ai-systems-in-production/) |
 | LiteLLM compromises | Backdoored twice in 2026: March via Trivy in its CI; Oct 1.107.0 via a `.pth` startup-hook stealer in both PyPI and Docker images | Motivates Lab 01's payload replay and Lab 07's gateway choice | ✔ | 2026-11-13 | [LiteLLM](https://docs.litellm.ai/blog/security-update-march-2026) |
 | CI/CD token theft wave | Mini Shai-Hulud (May): `pull_request_target` + cache poisoning + OIDC token theft hit TanStack (CVE-2026-45321). Oct 8: malicious workflow pushed to hundreds of repos. Press reports only | Lab 01 threat model; Lab 00 OIDC trust policy | ? | 2026-11-15 | [SecurityWeek](https://www.securityweek.com/tanstack-mistral-ai-uipath-hit-in-fresh-supply-chain-attack/amp/) |
+| GitHub Agentic Workflows (`gh-aw`) | Markdown workflows compiled to `.lock.yml` + `actions-lock.json`, run in a 3-container `awf` egress firewall with Safe Outputs | Bounded LLM steps for radar/digest workflows and Lab 01 lockfile posture. Pin `>= 0.85.4` | ✔ | 2026-11-22 | [github/gh-aw](https://github.com/github/gh-aw) |

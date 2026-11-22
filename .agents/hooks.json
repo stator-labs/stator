@@ -1,0 +1,16 @@
+{
+  "stator-guardrails": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command|read_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ./hooks/guardrails.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

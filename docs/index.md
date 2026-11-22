@@ -1,27 +1,25 @@
 ---
 title: Stator docs
-updated: 2026-11-16
+updated: 2026-11-22
 ---
 
 # Stator docs
 
-Plain markdown. It reads the same on GitHub (web or the mobile app), in Obsidian, or in any editor. No paid sync and no plugins needed.
+Plain Markdown. Renders cleanly on GitHub, mobile, Obsidian or any editor.
 
-## What's here (this is the whole list)
-- [how-this-works](how-this-works.md): the operating model. Board, sessions, scheduled tasks, cost guardrails.
-- [human-in-the-loop](human-in-the-loop.md): why agents ask before some actions, and what enforces it. The rules are in AGENTS.md.
-- [radar](radar.md): one table of trends and tools being watched, max 25 rows.
-- [research/2026-11-runway-report](research/2026-11-runway-report.md): the current foundation report.
+## Index
+- [how-this-works](how-this-works.md): board, automation loop, cost guardrails.
+- [human-in-the-loop](human-in-the-loop.md): risk tiers, two-lane HITL flow and enforcement map.
+- [bot-identity](bot-identity.md): `stator-bot` GitHub App setup (`CODEOWNERS`, Merge Queue, short-lived tokens).
+- [radar](radar.md): watched trends and tools (max 25 rows).
+- [research/2026-11-runway-report](research/2026-11-runway-report.md): baseline research report.
 
-The lab table is in the [root README](../README.md). Each lab's knowledge lives in its own `labs/NN-*/README.md`.
+Lab knowledge lives in each lab's `labs/NN-*/README.md`. The full lab list sits in the [root README](../README.md).
 
-## Rules that keep this small
-Most wikis fail by accumulating, Confluence-style. These rules are checked by `tools/docs-lint.py`, which the weekly board-health task runs:
-
-1. **Knowledge lives next to what it describes.** Anything about a lab goes in that lab's README. `docs/` holds only what spans several labs.
-2. **Hard budget:** at most 8 files in `docs/` and 250 lines per file.
-3. **Every `docs/` file is linked from this page.** Unlinked files get deleted.
-4. **One radar table, at most 25 rows.** Adopted items move into a lab README. Dropped items are deleted.
-5. **Replace, don't append.** A new research report replaces the old one. Git history is the archive.
-6. **No session, meeting or status notes in the repo.** Handoffs go in the Linear issue comment and the PR description; they close with the issue.
-7. **Delete freely.** Nothing is lost: `git log` keeps everything.
+## Rules (enforced by `tools/docs-lint.py`)
+1. **Stay local:** lab specifics belong in `labs/NN-*/README.md`; `docs/` holds cross-lab docs only.
+2. **Hard cap:** at most 8 files in `docs/` and 250 lines per file.
+3. **No orphans:** every file in `docs/` must be linked from this page.
+4. **Radar cap:** one table, max 25 rows. Move adopted items to a lab README; delete dropped ones.
+5. **Replace, don't append:** delete stale text; `git log` is the archive.
+6. **No status notes in git:** handoffs live on the Linear issue and PR.
