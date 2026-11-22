@@ -1,34 +1,12 @@
-<!-- Title: <Area> · <what it changes>. No issue ID in the title. Naming and tiers: AGENTS.md. Card format: .claude/skills/stator-presenting/SKILL.md -->
+<!-- Title: <Area> · <what it changes> (no issue ID). Rules: AGENTS.md, .agents/skills/stator-presenting/SKILL.md -->
 Linear: <issue title> (<ID>)
 
-## What and why
-<!-- One or two sentences. Results before process. Link the issue. -->
+## Summary
+<!-- 1–2 sentences: what changed and why. -->
 
-## Tier
-<!-- 1 · Review (repo only), or 2 · Ask first, with the trigger: AWS, cost, trust, deletion, public, scope. -->
+## Checked
+<!-- One line: what ran locally vs what needs CI or real AWS. -->
 
-## Changes
-| File or resource | Action | Note |
-|---|---|---|
-|  |  |  |
-
-<!-- Add a Mermaid diagram if trust, data flow or structure changes. -->
-
-## Checked / not checked
-<!-- What ran and passed. What only real AWS or a real run will show. -->
-
-## Skipped
-<!-- What you left out or deferred, and why. "Nothing" is fine. -->
-
-<!-- Tier 2 only from here. Delete for Tier 1. -->
-## Cost
-<!-- one-time · monthly · idle, with the source. "$0" needs a reason. -->
-
-## Risk and security
-<!-- What breaks if this is wrong, and who notices. Permissions or trust added or widened ("none" is fine). -->
-
-## Rollback
-<!-- Exact steps. Fully reversible? -->
-
-## Decision
-<!-- approve · change · decline. Recommended: <one>, because <reason>. No answer means nothing happens. -->
+<!-- Tier 2 only (delete if none apply): -->
+<!-- **Risk / cost:** only state non-zero cost, breaking changes, or new trust/permissions. -->
+<!-- **Rollback:** how to undo. -->

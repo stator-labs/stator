@@ -1,9 +1,7 @@
-# Trust paths: what changes the rules, the pipeline, AWS access or what agents may do.
-# Yaaf owns them. Agent PRs are authored as yaaf-some today, so GitHub can't request his
-# review on them and the ruleset does not require code-owner review (STAT-32, option E).
-# The gate today is `Policy: trust paths` plus the deny rules in .claude/settings.json.
+# Trust paths: rules, pipeline, AWS access and agent hooks.
+# Takes effect automatically once agent PRs run under the stator-bot GitHub App (STAT-46).
 /.github/                     @yaaf-some
-/.claude/                     @yaaf-some
+/.agents/                     @yaaf-some
 /AGENTS.md                    @yaaf-some
 /CLAUDE.md                    @yaaf-some
 /tools/                       @yaaf-some
