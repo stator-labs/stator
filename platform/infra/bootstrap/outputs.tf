@@ -10,6 +10,14 @@ output "apply_role_arn" {
   value = aws_iam_role.apply.arn
 }
 
+output "foundation_plan_role_arn" {
+  value = aws_iam_role.foundation_plan.arn
+}
+
+output "foundation_apply_role_arn" {
+  value = aws_iam_role.foundation_apply.arn
+}
+
 output "region" {
   value = var.region
 }
