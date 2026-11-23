@@ -1,0 +1,150 @@
+name: Tofu Plan
+
+# Reusable PR plan workflow pinned by AWS IAM OIDC condition `job_workflow_ref` on main.
+# Called by infrastructure.yml. Runs `tofu plan`, classifies risk with tools/plan-gate.py,
+# and posts or updates the PR comment.
+on:
+  workflow_call:
+    inputs:
+      stacks:
+        description: JSON array of changed stack paths
+        required: true
+        type: string
+      head_sha:
+        description: Pull request head commit SHA
+        required: true
+        type: string
+      pr_number:
+        description: Pull request number
+        required: true
+        type: number
+    secrets:
+      ALERT_EMAIL:
+        description: Alert address for stacks declaring variable alert_email
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: "Tofu Plan: run"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # OIDC -> stator-plan (or runway-plan before cutover)
+      pull-requests: write # the plan comment
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned tofu
+        run: sudo tools/cloud-setup.sh tofu
+      - name: Show OIDC claims (verifies job_workflow_ref and sub)
+        run: python3 tools/oidc-claims.py
+      - id: aws
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: stator-plan-${{ github.run_id }}
+          retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
+          mask-aws-account-id: true # default is false; the repo is public
+      - name: tofu plan and plan-gate
+        id: plan
+        env:
+          STACKS: ${{ inputs.stacks }}
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          # Read by any stack that declares variable "alert_email"; ignored by the rest.
+          # Only same-repo PRs invoke this workflow (forks are skipped by infrastructure.yml).
+          TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }} # zizmor: ignore[secrets-outside-env]
+          TF_VAR_github_sub_prefix: ${{ vars.OIDC_SUB_PREFIX }}
+          COMMENT: ${{ runner.temp }}/plan-comment.md
+          HEAD_SHA: ${{ inputs.head_sha }}
+          AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
+        run: |
+          set -uo pipefail
+          n=$(jq length <<<"$STACKS")
+          limit=$(( 60000 / n ))
+          failed=0
+          # The backticks are Markdown code spans, not shell expansion.
+          # shellcheck disable=SC2016
+          printf '## Infrastructure plan\n\nCommit `%s`. Applies after merge, in environment `aws-apply`.\n' "$HEAD_SHA" >"$COMMENT"
+          for dir in $(jq -r '.[]' <<<"$STACKS"); do
+            out="$RUNNER_TEMP/plan.txt"
+            plan_bin="$RUNNER_TEMP/tfplan"
+            plan_json="$RUNNER_TEMP/plan.json"
+            rm -f "$plan_bin" "$plan_json"
+            {
+              tofu -chdir="$dir" init -no-color -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET" \
+                && tofu -chdir="$dir" plan -no-color -lock-timeout=5m -out="$plan_bin"
+            } >"$out" 2>&1
+            rc=$?
+            gate_line=""
+            if [ "$rc" -eq 0 ]; then
+              summary=$(grep -E '^(Plan:|No changes\.)' "$out" | tail -1)
+              if tofu -chdir="$dir" show -json "$plan_bin" >"$plan_json" 2>>"$out"; then
+                gate_out=$(python3 tools/plan-gate.py "$dir" "$plan_json" 2>&1)
+                gate_rc=$?
+                printf '%s\n' "$gate_out" >>"$out"
+                gate_line=$(head -1 <<<"$gate_out")
+                if [ "$gate_rc" -ne 0 ]; then
+                  failed=1
+                  summary="❌ blocked by plan-gate ($gate_line)"
+                fi
+              else
+                failed=1
+                summary="❌ failed to export plan JSON"
+              fi
+            else
+              failed=1
+              summary="❌ failed (exit $rc)"
+            fi
+            # Plan text is data: stop it from being read as workflow commands.
+            token=$(openssl rand -hex 16)
+            echo "::stop-commands::$token"; cat "$out"; echo "::$token::"
+            {
+              # shellcheck disable=SC2016
+              printf '\n### `%s`\n%s\n' "$dir" "$summary"
+              if [ -n "$gate_line" ]; then
+                # shellcheck disable=SC2016
+                printf '`%s`\n' "$gate_line"
+              fi
+              printf '\n<details><summary>Show output</summary>\n\n```\n'
+              tail -c "$limit" "$out"
+              printf '\n```\n</details>\n'
+            } >>"$COMMENT"
+          done
+          if [ -n "$TF_VAR_alert_email" ]; then
+            body=$(cat "$COMMENT")
+            printf '%s\n' "${body//"$TF_VAR_alert_email"/(redacted)}" >"$COMMENT"
+          fi
+          if [ -n "$AWS_ACCOUNT_ID" ]; then
+            body=$(cat "$COMMENT")
+            printf '%s\n' "${body//"$AWS_ACCOUNT_ID"/(redacted)}" >"$COMMENT"
+          fi
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+      - name: Post or update the plan comment
+        if: ${{ !cancelled() && steps.plan.outcome != 'skipped' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          COMMENT: ${{ runner.temp }}/plan-comment.md
+          PR_NUMBER: ${{ inputs.pr_number }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- runway-infrastructure-plan -->';
+            const body = `${marker}\n${fs.readFileSync(process.env.COMMENT, 'utf8')}`;
+            const { owner, repo } = context.repo;
+            const issue_number = Number(process.env.PR_NUMBER);
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const mine = comments.find(c => c.user?.type === 'Bot' && c.body?.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+      - name: Fail if a plan failed
+        if: steps.plan.outputs.failed == '1'
+        run: exit 1
