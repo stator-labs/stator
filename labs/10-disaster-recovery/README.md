@@ -12,8 +12,14 @@ roles: [SRE]
 
 **Proof:** _not yet_
 
-## Problem
-Backups nobody has restored aren't backups.
+## Scenario
+A customer contract requires proof of database restore within stated RPO and RTO targets. Today backups run without tested recovery drills or off-account copies.
+
+## Requirements
+- **Functional:** ship CloudNativePG backups to S3 (with off-account copy), break the database on purpose, complete a timed restore drill against RPO/RTO and write a blameless postmortem.
+- **SLO / reliability:** timed restore meets the stated RPO and RTO targets under real failure conditions.
+- **Cost ceiling:** `<$3` total test budget, `$0` idle after teardown.
+- **Security & compliance:** encrypted off-account backup target, least-privilege backup role and audit trail.
 
 ## What I built
 _Planned:_

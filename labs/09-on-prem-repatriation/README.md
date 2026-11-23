@@ -12,8 +12,14 @@ roles: [Platform, SA, Defense]
 
 **Proof:** _not yet_
 
-## Problem
-Steady workloads may be cheaper off the cloud; nobody has the numbers.
+## Scenario
+The steady-state catalog API may cost more in the cloud than on rented bare metal or colo hardware. Platform needs real deployment numbers and a migration plan before committing to repatriation.
+
+## Requirements
+- **Functional:** run Stator on local k3s/Talos with a KubeVirt VM workload, CloudNativePG, a cloud-vs-colo TCO memo and a data migration plan with RPO and RTO.
+- **SLO / reliability:** stated RPO/RTO bounds for Postgres migration cutover with verified service health.
+- **Cost ceiling:** `~$0` AWS spend (local cluster evaluation).
+- **Security & compliance:** local network isolation, declarative cluster manifests and reproducible image digests.
 
 ## What I built
 _Planned:_
