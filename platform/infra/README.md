@@ -19,7 +19,8 @@ flowchart LR
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`.
-- **`bootstrap/`** (terminal-only): state bucket, GitHub OIDC provider, `runway-plan` / `runway-apply` roles (`stator-*` in Phase 3 Step B). Run once via `make bootstrap ALERT_EMAIL=<email>`. Trusts the repo's OIDC subject prefix reported by GitHub; sign-in failures print live claims via `tools/oidc-claims.py`.
+- **`bootstrap/`** (terminal-only, management): management state bucket, GitHub OIDC provider, legacy `runway-plan` / `runway-apply` roles (retired in `STAT-36` Step C).
+- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-plan` (pinned to `job_workflow_ref` on `main`), `stator-apply`, `stator-reaper` and `stator-boundary` under `/stator/`. Run with `AWS_PROFILE=stator-labs make bootstrap`; run `make cutover` after the live OIDC probe passes.
 - **`foundation/`** (terminal-only): AWS Organization, `runway-labs` account in `stator-labs` OU, guardrail SCP, centralized root access, 90-day org CloudTrail, IAM Access Analyzer, root sign-in alert, Identity Center, budgets ($5/$15/$30), anomaly monitor and the $30 labs kill-switch SCP (`kill-switch.tf`). Personal values live in git-ignored `foundation.auto.tfvars`.
 - **`modules/`**: shared modules. Changing them plans every stack.
 

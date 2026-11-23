@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Applied only from Yaaf's terminal. CI lints them but never plans or applies them: bootstrap
 # creates the CI roles, and foundation manages the AWS organization from the management account.
-TERMINAL_ONLY = ("platform/infra/bootstrap", "platform/infra/foundation")
+TERMINAL_ONLY = ("platform/infra/bootstrap", "platform/infra/labs-bootstrap", "platform/infra/foundation")
 # Changes here can affect every stack, so they plan/apply all of them.
 SHARED = ("platform/infra/modules/", ".github/workflows/infrastructure.yml", "tools/tofu-stacks.py",
           "tools/checkov/", ".tflint.hcl")
