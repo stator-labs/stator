@@ -21,6 +21,20 @@ MAX_DOC_FILES = 8
 MAX_LINES = 250
 MAX_RADAR_ROWS = 25
 STATUS_EMOJI = {"done": "✅", "now": "🔨", "next": "💡", "idea": "💡"}
+REQUIRED_LAB_SECTIONS = (
+    "Proof",
+    "Scenario",
+    "Requirements",
+    "Constraints",
+    "Design and alternatives",
+    "Threat model and security notes",
+    "Cost",
+    "Operations",
+    "Rollout and rollback",
+    "Acceptance and demo",
+    "What broke",
+    "What I'd change",
+)
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
 docs = root / "docs"
@@ -76,6 +90,20 @@ for lab_readme in sorted((root / "labs").glob("*/README.md")):
         problems.append(f"labs/{folder} is missing from the root README lab table.")
     elif want and want not in row:
         problems.append(f"labs/{folder}: status '{m.group(1)}' but the root README shows something else (expected {want}).")
+    if m.group(1) in ("now", "done"):
+        headings, in_fence = [], False
+        for line in text.splitlines():
+            if line.lstrip().startswith("```"):
+                in_fence = not in_fence
+            elif not in_fence and (hm := re.match(r"^##\s+(.+?)\s*$", line)):
+                headings.append(hm.group(1))
+        missing = [s for s in REQUIRED_LAB_SECTIONS if s not in headings]
+        if missing:
+            problems.append(f"{lab_readme.relative_to(root)} (status '{m.group(1)}') is missing required sections: {', '.join(missing)}.")
+        else:
+            pos = [headings.index(s) for s in REQUIRED_LAB_SECTIONS]
+            if pos != sorted(pos):
+                problems.append(f"{lab_readme.relative_to(root)} required sections are out of order (see templates/lab-README.md).")
 
 # 7. Writing style (.agents/skills/stator-writing). Stock phrases and em dashes fail.
 STOCK = re.compile(r"\b(seamless(ly)?|robust|leverag\w*|cutting-edge|game-chang\w*|delve|pivotal|testament to"
