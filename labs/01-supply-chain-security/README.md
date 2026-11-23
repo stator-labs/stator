@@ -12,8 +12,14 @@ roles: [Platform, Security, Defense]
 
 **Proof:** _not yet_
 
-## Problem
-2026 supply-chain attacks (Shai-Hulud waves, two LiteLLM compromises) went through CI and shipped with valid provenance. Signing alone isn't enough.
+## Scenario
+An upstream CI dependency was compromised (like tj-actions in 2025 and the 2026 Shai-Hulud / LiteLLM waves), and builds shipped with valid provenance. Today signing alone misses tampered dependencies and unpinned actions.
+
+## Requirements
+- **Functional:** signed artifacts, SBOM, provenance checked at deploy, pinned dependencies with a cooldown, and an incident playbook blocking a `.pth` startup-hook payload.
+- **SLO / reliability:** CI policy and signature gates fail closed on every PR; zero unpinned actions or skipped checks.
+- **Cost ceiling:** `~$0` idle and per run on public GitHub Actions.
+- **Security & compliance:** SHA-pinned actions, digest-pinned images, OIDC minting restricted to `main`, SLSA/CIS CI supply-chain controls.
 
 ## What I built
 - First SHA-pinned workflow: [`docs.yml`](../../.github/workflows/docs.yml) runs `tools/docs-lint.py` on every PR to `main`. Read-only token, no secrets, no stored git credentials. `actionlint` and `zizmor` (pedantic) report zero findings.
