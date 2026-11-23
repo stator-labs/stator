@@ -12,8 +12,14 @@ roles: [Platform, SRE]
 
 **Proof:** _not yet_
 
-## Problem
-Clusters left running cost money; clusters built by hand can't be rebuilt.
+## Scenario
+Developers want a full preview environment per pull request without leaving idle clusters running overnight. Today clusters built by hand drift and stay billed after testing ends.
+
+## Requirements
+- **Functional:** provision EKS Auto Mode, Gateway API and Argo CD app-of-apps with `make up` / `make down`, plus `ingress2gateway` migration notes.
+- **SLO / reliability:** preview environment ready in 20 minutes and torn down automatically by the nightly reaper (`make nuke`).
+- **Cost ceiling:** `$1–3/session`, tracked per environment-hour and `$0` idle.
+- **Security & compliance:** OIDC-only deploy, external port scan proving only intended ports are exposed, mandatory ephemeral tags.
 
 ## What I built
 _Planned:_
