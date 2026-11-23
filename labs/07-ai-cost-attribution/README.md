@@ -12,8 +12,14 @@ roles: [Cloud, Platform, SA, AI Infra]
 
 **Proof:** _not yet_
 
-## Problem
-The AI bill arrives as one number nobody can split.
+## Scenario
+The AI bill tripled and finance wants cost split per team, agent and resolved ticket. Today model usage arrives as one opaque AWS Bedrock invoice with no team caps.
+
+## Requirements
+- **Functional:** place an AI gateway in front of Bedrock with per-team/agent keys, OpenTelemetry GenAI traces, a daily FOCUS-format export and a monthly showback report.
+- **SLO / reliability:** per-team budgets stop overspend automatically without dropping healthy teams.
+- **Cost ceiling:** `$2–10` experiment cap, `$0` idle when stopped.
+- **Security & compliance:** gateway dependency review (after LiteLLM incidents), scoped API keys and tagged Bedrock calls.
 
 ## What I built
 _Planned:_

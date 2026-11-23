@@ -12,8 +12,14 @@ roles: [Platform, Security, AI Infra]
 
 **Proof:** _not yet_
 
-## Problem
-An AI agent with tools and credentials is untrusted code with a blast radius.
+## Scenario
+Support wants an agent that runs code on tickets, while security says untrusted code must never reach customer data or AWS credentials. Today an agent with tools carries an uncontained blast radius.
+
+## Requirements
+- **Functional:** run the triage agent in a sandboxed runtime (OpenShell locally, Nitro Sandboxes on EKS `isolated-sandbox`) with deny-by-default egress and credential placeholders.
+- **SLO / reliability:** red-team probes trigger policy denials deterministically and a kill switch stops runaway sandboxes immediately.
+- **Cost ceiling:** `$1–3/session`, `$0` idle after teardown.
+- **Security & compliance:** threat model mapped to MITRE ATLAS, strict egress allow-list and recorded policy denials.
 
 ## What I built
 _Planned:_
