@@ -60,16 +60,15 @@ Any workflow that opens PRs mints a 1-hour token with `actions/create-github-app
 ```
 
 ## 3. Mint a 1-hour token locally (replaces personal PATs)
-Store the `.pem` key at `~/.config/stator/stator-bot.pem` (`chmod 600`) and export a 1-hour `GH_TOKEN` for `gh` and `git`:
+Save the App ID and `.pem` key once in `~/.config/stator/`, then run `tools/bot-token.py`:
 
 ```bash
-# Minimal helper (requires openssl, curl, jq)
-# 1. Sign a 10-minute RS256 JWT with APP_ID + ~/.config/stator/stator-bot.pem
-# 2. POST /app/installations/$INSTALLATION_ID/access_tokens -> 1-hour ghs_... token
-# 3. export GH_TOKEN="<token>"
+chmod 600 ~/.config/stator/stator-bot.pem
+echo "<your-app-id>" > ~/.config/stator/app-id
+eval "$(python3 tools/bot-token.py)"
 ```
 
-Once `STAT-46` ships `tools/bot-token.py` (stdlib + `openssl`), one command refreshes a 1-hour `GH_TOKEN` with zero long-lived PATs on disk.
+One command refreshes a 1-hour `GH_TOKEN` for `gh` and `git push` with zero long-lived PATs on disk.
 
 ## 4. Enable real `CODEOWNERS` + Merge Queue on `main`
 In `stator-labs/stator` **Settings -> Rules -> Rulesets (`main`)**:
