@@ -12,8 +12,14 @@ roles: [SA, Platform]
 
 **Proof:** _not yet_
 
-## Problem
-Per-seat SaaS is under pressure; self-hosting isn't free either.
+## Scenario
+A per-seat SaaS contract (feature flags or status page) is up for renewal, and finance asks whether self-hosting saves money. Today comparisons ignore on-call, patching and upgrade toil.
+
+## Requirements
+- **Functional:** deploy an open-source replacement in the Stator stack, measure TCO including on-call and patching hours, produce a risk register and write a recommendation memo.
+- **SLO / reliability:** self-hosted replacement meets availability expectations without paging on-call outside business hours.
+- **Cost ceiling:** `~$0` idle during evaluation.
+- **Security & compliance:** pinned OSS container digests, supply-chain scan and upgrade runbook.
 
 ## What I built
 _Planned:_
