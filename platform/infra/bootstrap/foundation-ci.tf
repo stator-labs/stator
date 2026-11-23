@@ -87,6 +87,11 @@ resource "aws_iam_role_policy" "foundation_plan_state" {
 # ---------------------------------------------------------------- foundation apply role
 
 data "aws_iam_policy_document" "foundation_apply" {
+  # checkov:skip=CKV_AWS_107:No credentials exposure; role runs only in aws-foundation-apply with explicit Deny on pipeline/OIDC IAM.
+  # checkov:skip=CKV_AWS_108:S3 access is scoped to foundation state prefix and org trail bucket; explicit Denies protect bucket config and deletion.
+  # checkov:skip=CKV_AWS_109:IAM writes are restricted solely to role/runway/runway-budget-kill-switch; DenySelfAndPipelineEscalation blocks all pipeline/OIDC/boundary roles.
+  # checkov:skip=CKV_AWS_110:iam:PassRole and PutRolePolicy apply only to runway-budget-kill-switch; DenySelfAndPipelineEscalation blocks escalation.
+  # checkov:skip=CKV_AWS_111:Write actions are limited to the 7 foundation services and explicit S3/SNS/Events/IAM ARNs; destructive org and trail actions are denied.
   # checkov:skip=CKV_AWS_356:Organizations, Cost Explorer, Budgets, SSO and Access Analyzer actions do not support resource-level ARNs for account/org-wide operations; hard Denies below bound destructive actions.
   # checkov:skip=CKV_AWS_288:Scoped to the 7 foundation services; no arbitrary data exfiltration actions.
   # checkov:skip=CKV_AWS_289:IAM writes are restricted solely to role/runway/runway-budget-kill-switch; DenySelfAndPipelineEscalation blocks all pipeline/OIDC/boundary roles.
