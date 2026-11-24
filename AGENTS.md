@@ -3,9 +3,10 @@
 Yaaf owns Stator (see `README.md`). You propose; he approves real risk.
 
 ## Read first
-1. Linear `Process` docs (`P-STAT-1`): `Control center · Architecture, invariants, and free-tier stack` and `Roadmap · Execution tracks and rebuilt scheduled automation`. Also read `docs/how-this-works.md`.
-2. Your Linear issue (workspace `yaaf-some`, team `Stator`, key `STAT`).
-3. The README of the lab you're touching.
+1. `specs/INDEX.md` and `specs/GLOSSARY.md` (load only the spec slices needed for your task).
+2. Linear `Process` docs (`P-STAT-1`): `Control center · Architecture, invariants, and free-tier stack` and `Roadmap · Execution tracks and rebuilt scheduled automation`. Also read `docs/how-this-works.md`.
+3. Your Linear issue (workspace `yaaf-some`, team `Stator`, key `STAT`).
+4. The README of the lab you're touching.
 
 ## Hard rules
 - **Fresh project.** Don't import old experiments (Floci, Online Boutique, SpinKube, "Harborline") without a clear reason.
@@ -26,7 +27,7 @@ Why and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md)
 - **Tier 0 · Do:** read, research, edit on a branch, run local checks, comment in Linear.
 - **Tier 1 · PR:** open ready for review (not draft).
   - **Allow-listed files only:** enable auto-merge on your own PR. Allow-list: `docs/` (except `docs/how-this-works.md`, `docs/human-in-the-loop.md`, `docs/index.md`, `docs/radar.md`), `labs/*/README.md`, `templates/`, `README.md`.
-  - **Anything else:** leave auto-merge off. `Policy: trust paths` enforces this from `main`.
+  - **Anything else:** leave auto-merge off. Canonical `specs/` files stay human-reviewed; tactical execution inside an approved proposal runs autonomously by squads. `Policy: trust paths` enforces this from `main`.
   - Never merge, review or approve a PR. `.agents/hooks/guardrails.py` blocks both.
 - **Tier 2 · Ask first:** stop, send a short risk ask (`.agents/skills/stator-presenting/SKILL.md`), and wait for a yes. Triggers:
   - **AWS:** applying a stack or approving a deployment.
@@ -40,13 +41,14 @@ Why and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md)
 
 ## Workflow
 1. Branch from `main` using the naming rules below. Never push to `main`.
-2. Stay inside the issue's **Done when**. Log anything new as a Linear `Idea` issue. Same failure twice: stop and report.
-3. Before finishing:
+2. For non-trivial changes, run the OS loop (`stator-elephant` -> `stator-goldfish` -> `stator-execute` -> `stator-living-docs`).
+3. Stay inside the issue's **Done when**. Log anything new as a Linear `Idea` issue. Same failure twice: stop and report.
+4. Before finishing:
    - update the lab README (Proof, Cost receipt, Decisions, What broke) and keep the root README table in sync
-   - run `python3 tools/docs-lint.py` and `python3 tools/identifier-check.py`
+   - run `python3 tools/specs-lint.py`, `python3 tools/docs-lint.py`, and `python3 tools/identifier-check.py`
    - post a short handoff (4–6 lines) on the Linear issue and update its state
    - open a PR using `.github/pull_request_template.md`, linking the Linear issue on line 1
-4. Never mark a lab ✅ without real proof. Keep the first failure in "What broke".
+5. Never mark a lab ✅ without real proof. Keep the first failure in "What broke".
 
 ## Cloud sessions
 - Cloud VMs run `tools/cloud-setup.sh` or `tools/antigravity-setup.sh` (shared SHA256 pins).
