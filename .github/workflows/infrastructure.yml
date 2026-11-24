@@ -102,108 +102,17 @@ jobs:
       github.event_name == 'pull_request'
       && github.event.pull_request.head.repo.full_name == github.repository
       && needs.detect-stacks.outputs.stacks != '[]'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
     permissions:
       contents: read
-      id-token: write # OIDC -> runway-plan
+      id-token: write # OIDC -> stator-plan
       pull-requests: write # the plan comment
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Install pinned tofu
-        run: sudo tools/cloud-setup.sh tofu
-      - id: aws
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
-        with:
-          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          role-session-name: runway-plan-${{ github.run_id }}
-          retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
-          mask-aws-account-id: true # default is false; the repo is public
-      - name: Show OIDC claims (the role's trust policy must match them)
-        if: failure() && steps.aws.outcome == 'failure'
-        run: python3 tools/oidc-claims.py
-      - name: tofu plan
-        id: plan
-        env:
-          STACKS: ${{ needs.detect-stacks.outputs.stacks }}
-          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
-          # Read by any stack that declares variable "alert_email"; ignored by the rest.
-          # PR plans cannot use the aws-apply environment (it accepts main only). The secret is
-          # an alert address, not a credential, and only same-repo PRs get it (forks are skipped).
-          TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }} # zizmor: ignore[secrets-outside-env]
-          # Read by a stack that declares variable "github_sub_prefix" (OIDC trust); ignored by the rest.
-          TF_VAR_github_sub_prefix: ${{ vars.OIDC_SUB_PREFIX }}
-          COMMENT: ${{ runner.temp }}/plan-comment.md
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
-        run: |
-          set -uo pipefail
-          n=$(jq length <<<"$STACKS")
-          limit=$(( 60000 / n ))
-          failed=0
-          # The backticks are Markdown code spans, not shell expansion.
-          # shellcheck disable=SC2016
-          printf '## Infrastructure plan\n\nCommit `%s`. Applies after merge, in environment `aws-apply`.\n' "$HEAD_SHA" >"$COMMENT"
-          for dir in $(jq -r '.[]' <<<"$STACKS"); do
-            out="$RUNNER_TEMP/plan.txt"
-            {
-              tofu -chdir="$dir" init -no-color -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET" \
-                && tofu -chdir="$dir" plan -no-color -lock-timeout=5m
-            } >"$out" 2>&1
-            rc=$?
-            if [ "$rc" -eq 0 ]; then
-              summary=$(grep -E '^(Plan:|No changes\.)' "$out" | tail -1)
-            else
-              failed=1; summary="❌ failed (exit $rc)"
-            fi
-            # Plan text is data: stop it from being read as workflow commands.
-            token=$(openssl rand -hex 16)
-            echo "::stop-commands::$token"; cat "$out"; echo "::$token::"
-            {
-              # shellcheck disable=SC2016
-              printf '\n### `%s`\n%s\n\n<details><summary>Show output</summary>\n\n```\n' "$dir" "$summary"
-              tail -c "$limit" "$out"
-              printf '\n```\n</details>\n'
-            } >>"$COMMENT"
-          done
-          # Backstop: the comment is public and GitHub masks secrets in logs only.
-          # A stack should mark alert_email sensitive; this catches one that doesn't.
-          if [ -n "$TF_VAR_alert_email" ]; then
-            body=$(cat "$COMMENT")
-            printf '%s\n' "${body//"$TF_VAR_alert_email"/(redacted)}" >"$COMMENT"
-          fi
-          # Same for the account number: the log masks it, the comment text does not.
-          if [ -n "$AWS_ACCOUNT_ID" ]; then
-            body=$(cat "$COMMENT")
-            printf '%s\n' "${body//"$AWS_ACCOUNT_ID"/(redacted)}" >"$COMMENT"
-          fi
-          echo "failed=$failed" >> "$GITHUB_OUTPUT"
-      - name: Post or update the plan comment
-        # No plan step, no comment file: skip, so a sign-in failure shows one clear error.
-        if: ${{ !cancelled() && steps.plan.outcome != 'skipped' }}
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          COMMENT: ${{ runner.temp }}/plan-comment.md
-        with:
-          script: |
-            const fs = require('fs');
-            const marker = '<!-- runway-infrastructure-plan -->';
-            const body = `${marker}\n${fs.readFileSync(process.env.COMMENT, 'utf8')}`;
-            const { owner, repo } = context.repo;
-            const issue_number = context.payload.pull_request.number;
-            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
-            const mine = comments.find(c => c.user?.type === 'Bot' && c.body?.startsWith(marker));
-            if (mine) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body });
-            }
-      - name: Fail if a plan failed
-        if: steps.plan.outputs.failed == '1'
-        run: exit 1
+    uses: stator-labs/stator/.github/workflows/tofu-plan.yml@main # zizmor: ignore[unpinned-uses] AWS OIDC job_workflow_ref requires @refs/heads/main
+    with:
+      stacks: ${{ needs.detect-stacks.outputs.stacks }}
+      head_sha: ${{ github.event.pull_request.head.sha }}
+      pr_number: ${{ github.event.pull_request.number }}
+    secrets:
+      ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
 
   required-checks:
     name: "Infrastructure: required checks"
@@ -257,7 +166,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-          role-session-name: runway-apply-${{ github.run_id }}
+          role-session-name: stator-apply-${{ github.run_id }}
           retry-max-attempts: 3
           mask-aws-account-id: true
       - name: Show OIDC claims (the role's trust policy must match them)
@@ -278,6 +187,8 @@ jobs:
             echo "::group::$dir"
             tofu -chdir="$dir" init -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
             tofu -chdir="$dir" plan -lock-timeout=15m -out=tfplan
+            tofu -chdir="$dir" show -json tfplan > "$RUNNER_TEMP/plan.json"
+            python3 tools/plan-gate.py "$dir" "$RUNNER_TEMP/plan.json"
             tofu -chdir="$dir" apply -lock-timeout=15m tfplan
             echo "::endgroup::"
           done
