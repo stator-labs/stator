@@ -8,12 +8,20 @@ updated: 2026-11-22
 ## Where things live
 | What | Where | Lifetime |
 |---|---|---|
+| Canonical specs, glossary and active proposals | `specs/` (`INDEX.md`, `GLOSSARY.md`, `changes/`) | living truth; deltas deleted on merge |
 | Lab knowledge (proof, cost, decisions, what broke) | `labs/NN-*/README.md` | while the lab exists |
 | Cross-lab docs | `docs/`, max 8 files ([index](index.md)) | replaced, never appended |
-| Work items and session handoffs | Linear: `yaaf-some` / team `Stator` (`STAT`) | closes with the issue |
+| Active work items, priorities and handoffs | Linear: `yaaf-some` / team `Stator` (`STAT`) linking to Git specs | closes with the issue |
 | Architecture baseline and roadmap | Linear `Process` (`P-STAT-1`): `Control center` and `Roadmap` docs | kept current |
 | Change review | PR description and comments | closes with the PR |
 | Agent rules, skills and hooks | `AGENTS.md` and `.agents/` | kept current |
+
+## Operating loop (General and squads)
+Yaaf leads strategy as the General; squads handle tactical execution via four skills in `.agents/skills/`:
+1. **Design (`stator-elephant`):** interviews the General and drafts `specs/changes/<slug>/` (`proposal.md` + `tasks.md`) with zero implementation code.
+2. **Gate (`stator-goldfish`):** runs a stateless, zero-context cold-eyes review (1 lens for clarity/gaps, 2nd lens for infra/trust/cost) until `PASS`.
+3. **Execute (`stator-execute`):** runs each atomic task in a fresh context bounded by its Context Manifest (well inside 200k tokens) with atomic commits.
+4. **Sync (`stator-living-docs`):** merges deltas into canonical `specs/`, deletes `specs/changes/<slug>/`, runs all linters, and opens one PR.
 
 ## Automation loop (deterministic + bounded AI)
 Scheduled and event-driven runs separate state collection from LLM reasoning so untrusted web/issue text never touches write credentials:

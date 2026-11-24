@@ -50,6 +50,7 @@ Every lab can be done on its own, in any order. Each one ships a proof, a **cost
 ## How this repo is organized
 
 ```
+specs/       canonical living truth, glossary, and in-flight change proposals
 labs/        one folder per lab: README (template below), Makefile, infra, proof
 platform/    reusable pieces labs graduate into (IaC modules, GitOps config)
 apps/        the workloads: catalog-api, site, triage-agent

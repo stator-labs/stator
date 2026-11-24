@@ -110,7 +110,7 @@ STOCK = re.compile(r"\b(seamless(ly)?|robust|leverag\w*|cutting-edge|game-chang\
                    r"|in order to|due to the fact|it is important to note|best-in-class|world-class)\b", re.I)
 prose = [root / "README.md", root / "AGENTS.md", *root.glob("templates/*.md"), *root.glob("labs/*/README.md"),
          *(root / ".agents").rglob("*.md"), *(root / "platform").rglob("README.md"), *(root / "tools").glob("*.md"),
-         *(p for p in docs.rglob("*.md") if "research" not in p.relative_to(docs).parts)]
+         *(root / "specs").rglob("*.md"), *(p for p in docs.rglob("*.md") if "research" not in p.relative_to(docs).parts)]
 for p in sorted(p for p in set(prose) if p.exists() and ours(p)):
     fenced = False
     for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
