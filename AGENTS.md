@@ -3,14 +3,14 @@
 Yaaf owns Stator (see `README.md`). You propose; he approves real risk.
 
 ## Read first
-1. `specs/INDEX.md` and `specs/GLOSSARY.md` (load only the spec slices needed for your task).
-2. Linear `Process` docs (`P-STAT-1`): `Control center · Architecture, invariants, and free-tier stack` and `Roadmap · Execution tracks and rebuilt scheduled automation`. Also read `docs/how-this-works.md`.
+1. `specs/INDEX.md` and `specs/GLOSSARY.md` (load only the spec slices needed for your task: `DOMAIN.md`, `STRATEGY.md`, `INVARIANTS.md`, `STACK.md`, `SYSTEM.md`).
+2. Linear `Roadmap · Execution tracks and rebuilt scheduled automation` (`P-STAT-1`) for active execution order, plus `docs/how-this-works.md`.
 3. Your Linear issue (workspace `yaaf-some`, team `Stator`, key `STAT`).
 4. The README of the lab you're touching.
 
 ## Hard rules
 - **Fresh project.** Don't import old experiments (Floci, Online Boutique, SpinKube, "Harborline") without a clear reason.
-- **No phases, no ADRs.** Labs stand alone. Record choices inline as short "Why not X?" notes (2–3 sentences).
+- **Foundation-first, no ADRs.** Lab 00 is the prerequisite; Labs 01 to 11 + D stand alone. Use named Tracks (not phases) and record choices inline as short "Why not X?" notes (2–3 sentences).
 - **Real AWS beats emulation.** AWS Emulator, kind and k3d are inner-loop only.
 - **Delete what Yaaf drops.** Never keep "just in case".
 - **$0 idle.** Tag every AWS resource (`project`, `lab`, `ephemeral`) and give it a teardown path.

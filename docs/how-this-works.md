@@ -1,6 +1,6 @@
 ---
 title: How this project runs
-updated: 2026-11-22
+updated: 2026-11-24
 ---
 
 # How this project runs
@@ -8,11 +8,11 @@ updated: 2026-11-22
 ## Where things live
 | What | Where | Lifetime |
 |---|---|---|
-| Canonical specs, glossary and active proposals | `specs/` (`INDEX.md`, `GLOSSARY.md`, `changes/`) | living truth; deltas deleted on merge |
+| Canonical domain, strategy, invariants, stack, and system specs, glossary, and active proposals | `specs/` (`INDEX.md`, `DOMAIN.md`, `STRATEGY.md`, `INVARIANTS.md`, `STACK.md`, `SYSTEM.md`, `GLOSSARY.md`, `changes/`) | living truth; deltas deleted on merge |
 | Lab knowledge (proof, cost, decisions, what broke) | `labs/NN-*/README.md` | while the lab exists |
 | Cross-lab docs | `docs/`, max 8 files ([index](index.md)) | replaced, never appended |
 | Active work items, priorities and handoffs | Linear: `yaaf-some` / team `Stator` (`STAT`) linking to Git specs | closes with the issue |
-| Architecture baseline and roadmap | Linear `Process` (`P-STAT-1`): `Control center` and `Roadmap` docs | kept current |
+| Execution tracks (`Roadmap`) and thin `Control center` pointer | Linear `Process` (`P-STAT-1`): `Roadmap` and `Control center` pointer to `specs/` | kept current |
 | Change review | PR description and comments | closes with the PR |
 | Agent rules, skills and hooks | `AGENTS.md` and `.agents/` | kept current |
 
