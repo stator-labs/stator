@@ -42,6 +42,7 @@ flowchart LR
 - **Now** (max 2): In Progress · **Next**: Todo · **Later**: Backlog · **Ideas**: Backlog + `Idea` label.
 - `Role` labels (`SA`, `Platform`, `Cloud`, `SRE`, `Security`, `AI Infra`, `Defense`) mark what each issue proves. `Process` marks meta work.
 - New trends become `Idea` issues and a row in [radar](radar.md), never a plan rewrite.
+- **GitHub webhook linking:** Branches (`<area>/stat-<N>-...`), commit trailers (`Part of STAT-<N>` / `Closes STAT-<N>`), and PR line 1 (`Closes STAT-<N>: <title>`) link automatically to Linear issues via the GitHub webhook.
 
 ## Real AWS without surprise bills
 - Budgets at $5 / $15 / $30, Cost Anomaly Detection, and an automatic $30 labs kill-switch SCP in `platform/infra/foundation`.

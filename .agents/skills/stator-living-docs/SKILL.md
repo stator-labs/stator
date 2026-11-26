@@ -26,7 +26,7 @@ Run this skill as the final step of an approved change proposal, after all tasks
    - `python3 tools/identifier-check.py --self-test && python3 tools/identifier-check.py`
    - `python3 .agents/hooks/guardrails.py --self-test`
 6. **Commit and open PR:**
-   - Commit the spec sync (`<area>: sync canonical specs for <slug>`).
-   - Push the branch and open one ready-for-review PR using `.github/pull_request_template.md` (`Linear: <title> (<ID>)` on line 1).
+   - Commit the spec sync (`<area>: sync canonical specs for <slug>`) with a Linear magic-word trailer (`Closes STAT-<N> (<title>)` when merging finishes the issue, or `Part of STAT-<N> (<title>)` if more PRs remain).
+   - Push the branch and open one ready-for-review PR using `.github/pull_request_template.md` (`Closes <ID>: <title>` or `Part of <ID>: <title>` on line 1).
    - Leave auto-merge OFF if the PR touches canonical `specs/`, `.agents/`, `platform/`, or CI.
    - Post a 4 to 6 line handoff on the Linear issue and report to the General using `stator-presenting`.

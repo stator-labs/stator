@@ -16,7 +16,7 @@ Stator separates strategic command from tactical execution so agents stay fast, 
 ## Source of truth split
 
 - **Git (`specs/`):** Holds canonical truth (`INDEX.md`, `GLOSSARY.md`, domain and system specs) and in-flight `specs/changes/<slug>/` folders.
-- **Linear (`STAT`):** Tracks active work items, priorities, and short handoffs linking back to Git specs. Linear does not store canonical design truth.
+- **Linear (`STAT`):** Tracks active work items, priorities, and short handoffs linking back to Git specs. Linear does not store canonical design truth. Git branches (`<area>/stat-<N>-...`), commit magic-word trailers (`Part of STAT-<N>` / `Closes STAT-<N>`), and PR line 1 sync status via Linear's GitHub webhook.
 
 ## Four-stage workflow loop
 

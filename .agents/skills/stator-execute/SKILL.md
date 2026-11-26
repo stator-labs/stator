@@ -23,7 +23,7 @@ Use this skill after the General approves a change proposal that has `Verdict: P
    - Read only the files in its **Context manifest** (plus `specs/GLOSSARY.md`).
    - Implement the **Action**.
    - Run every **Verify** command and confirm all **Done when** checks pass.
-   - Commit the task's changes atomically (`<area>: <imperative change>`).
+   - Commit the task's changes atomically (`<area>: <imperative change>`) with a Linear magic-word trailer in the body (`Part of STAT-<N> (<title>)` or `Refs STAT-<N> (<title>)`) so Linear links each commit without closing the issue early.
    - Return a short proof summary (files changed, verify command output, commit hash).
 3. Track completed tasks without pulling full file contents into coordinator context.
 4. Once all tasks pass, invoke `stator-living-docs` to merge deltas, clean up `specs/changes/<slug>/`, run all linters, and open one PR.
