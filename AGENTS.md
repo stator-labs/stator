@@ -40,14 +40,14 @@ Why and what enforces it: [docs/human-in-the-loop.md](docs/human-in-the-loop.md)
 - A yes covers one exact change. Unsure of the tier? Treat it as Tier 2.
 
 ## Workflow
-1. Branch from `main` using the naming rules below. Never push to `main`.
+1. Branch from `main` using the naming rules below (include `stat-<N>-` when linked to an issue). Never push to `main`.
 2. For non-trivial changes, run the OS loop (`stator-elephant` -> `stator-goldfish` -> `stator-execute` -> `stator-living-docs`).
 3. Stay inside the issue's **Done when**. Log anything new as a Linear `Idea` issue. Same failure twice: stop and report.
 4. Before finishing:
    - update the lab README (Proof, Cost receipt, Decisions, What broke) and keep the root README table in sync
    - run `python3 tools/specs-lint.py`, `python3 tools/docs-lint.py`, and `python3 tools/identifier-check.py`
    - post a short handoff (4–6 lines) on the Linear issue and update its state
-   - open a PR using `.github/pull_request_template.md`, linking the Linear issue on line 1
+   - open a PR using `.github/pull_request_template.md`, with a Linear magic word on line 1 (`Closes <ID>: <title>` or `Part of <ID>: <title>`)
 5. Never mark a lab ✅ without real proof. Keep the first failure in "What broke".
 
 ## Cloud sessions
@@ -61,15 +61,17 @@ Plain words that read on their own. Never use a bare issue ID: write what it is 
 
 | Thing | Rule | Example |
 |---|---|---|
-| Branch | `<area>/<what-it-changes>` | `lab00/budget-alerts` |
+| Branch | `<area>/stat-<N>-<what-it-changes>` (omit `stat-<N>-` if no issue) | `lab00/stat-9-budget-alerts` |
 | Area | `lab00`…`lab11`, `labd`, `platform`, `process`, `radar` | `radar/2026-11-22` |
-| Commit | `<area>: <change, imperative>` | `lab00: add budget alerts` |
+| Commit | `<area>: <change, imperative>` + body trailer (`Part of` or `Closes` `STAT-<N>`) | `lab00: add budget alerts` |
 | PR title | `<Area> · <what it changes>` (no issue ID) | `Lab 00 · Budget alerts at $5, $15 and $30` |
-| PR link | Line 1: `Linear: <title> (<ID>)` | `Linear: Budget alerts (STAT-9)` |
+| PR link | Line 1: `Closes <ID>: <title>` (or `Part of <ID>: <title>`) | `Closes STAT-9: Budget alerts` |
 | Lab | `NN · <Topic>`, folder `NN-<topic>` | `Lab 05 · AI Agent Sandboxing` |
 | Workflow | One noun, matching filename | `Infrastructure`, `infrastructure.yml` |
 | CI check | `<Workflow>: <action>` | `Infrastructure: plan` |
 | AWS resource | `stator-<purpose>` (legacy management: `runway-*`) | `stator-plan` |
+
+- **Linear webhook magic words:** Use `Part of STAT-<N> (<title>)` or `Refs STAT-<N> (<title>)` on intermediate atomic commits; use `Closes STAT-<N> (<title>)` (or `Fixes`/`Resolves`) in the final commit and PR line 1 when merging to `main` completes the issue.
 
 ## Docs rules (no wiki sprawl)
 - Lab knowledge lives in `labs/NN-*/README.md`. `docs/` holds cross-lab docs only (<= 8 files, <= 250 lines each).

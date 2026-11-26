@@ -1,5 +1,5 @@
-<!-- Title: <Area> · <what it changes> (no issue ID). Rules: AGENTS.md, .agents/skills/stator-presenting/SKILL.md -->
-Linear: <issue title> (<ID>)
+<!-- Title: <Area> · <what it changes> (no issue ID). Line 2 magic words: Closes/Fixes <ID>: <title>, or Part of <ID>: <title>. Rules: AGENTS.md, .agents/skills/stator-presenting/SKILL.md -->
+Closes <ID>: <issue title>
 
 ## Summary
 <!-- 1–2 sentences: what changed and why. -->
