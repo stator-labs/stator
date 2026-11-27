@@ -84,6 +84,7 @@ jobs:
         run: |
           python3 tools/plan-gate.py --self-test
           python3 tools/provider-allowlist.py --self-test
+          python3 .agents/hooks/guardrails.py --self-test
       - name: tofu test (mocked providers, no AWS access)
         # Runs every stack that has a tests/ folder. No credentials: providers are mocked.
         run: |

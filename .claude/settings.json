@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/guardrails.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
