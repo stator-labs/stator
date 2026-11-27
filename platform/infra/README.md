@@ -25,7 +25,7 @@ flowchart LR
 - **`modules/`**: shared modules. Changing them plans every stack.
 
 ## Stack rules
-- **State:** S3 backend, key `<stack>/terraform.tfstate` (labs use `<lab-folder>/terraform.tfstate`), `use_lockfile = true`. CI passes `-backend-config=bucket=$TF_STATE_BUCKET` so no account ID sits in git. Checked by `tools/tofu-stacks.py check`.
+- **State:** S3 backend, key `<state_key or id>/terraform.tfstate` from [`platform/stacks.json`](../stacks.json), `use_lockfile = true`. CI passes `-backend-config=bucket=$TF_STATE_BUCKET` so no account ID sits in git. Checked by `tools/tofu-stacks.py check`.
 - **Tags:** every `provider "aws"` sets `default_tags` (`project`, `lab`, `runway:ephemeral`). Checked by Checkov `CKV_RUNWAY_1` ([tools/checkov](../../tools/checkov/)).
 - **IAM:** roles and policies live under `/runway/` (`/stator/` after Step B) and attach `permissions_boundary`.
 - **OIDC roles:** declare `variable "github_sub_prefix"` (no default). Only terminal-only stacks hold OIDC roles, so the bootstrap scripts pass it and CI never does.
@@ -34,7 +34,8 @@ flowchart LR
 - **Lock file:** commit `.terraform.lock.hcl` (`linux_amd64` + `darwin_arm64`). CI runs `-lockfile=readonly`.
 
 ## Add a stack
-1. Add `versions.tf` (update `key` and `lab`):
+1. List it in [`platform/stacks.json`](../stacks.json): `dir`, `account` (`labs`), `ci: true`, `floor` (`auto` or `manual`). `tofu-stacks.py check` fails on an unlisted stack. Until the entry is on `main`, the gate sends the stack's plans to `manual`.
+2. Add `versions.tf` (update `key` and `lab`):
    ```hcl
    terraform {
      required_version = "~> 1.13"
@@ -56,8 +57,8 @@ flowchart LR
      }
    }
    ```
-2. Lock providers: `tofu init -backend=false && tofu providers lock -platform=linux_amd64 -platform=darwin_arm64`.
-3. Open a PR for the plan comment; merge and approve `aws-apply`.
+3. Lock providers: `tofu init -backend=false && tofu providers lock -platform=linux_amd64 -platform=darwin_arm64`.
+4. Open a PR for the plan comment; merge and approve `aws-apply`.
 
 To delete a stack: merge a PR emptying its `.tf` resources first, then a PR deleting the folder.
 

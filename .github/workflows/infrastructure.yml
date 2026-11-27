@@ -19,6 +19,7 @@ on:
       - "labs/*/infra/**"
       - ".github/workflows/infrastructure.yml"
       - "tools/tofu-stacks.py"
+      - "platform/stacks.json"
       - "tools/checkov/**"
       - ".tflint.hcl"
 
