@@ -7,7 +7,7 @@
 - `reaper.py`: turns the tagging API output into the nightly reaper's dry-run report. It deletes nothing and hides account numbers.
 - `oidc-claims.py`: prints the non-secret claims of a job's GitHub OIDC token, to debug AWS role trust policies.
 - `bot-token.py`: mints a 1-hour `GH_TOKEN` from `~/.config/stator/stator-bot.pem` and `~/.config/stator/app-id` (`eval "$(python3 tools/bot-token.py)"`).
-- `plan-gate.py`: classifies an OpenTofu plan JSON (`tofu show -json tfplan`) into `auto` (`aws-apply-auto`), `manual` (`aws-apply` / `aws-foundation-apply`), or `deny` (hard policy failure).
+- `plan-gate.py`: classifies an OpenTofu plan JSON (`tofu show -json tfplan`) into `auto` (`aws-apply-auto`), `manual` (`aws-apply`), or `deny` (hard policy failure).
 - `provider-allowlist.py`: refuses a stack whose lockfile lists a provider outside the allowlist, or that commits `.terraform/` or `terraform.d/`. The plan workflow runs it from `main` before `tofu init`.
 - `cloud-setup.sh`: pinned, SHA256-checked tool install for the Cloud-Project environment and CI.
 - `antigravity-setup.sh`: user-space install for Antigravity cloud VMs (`.agents/environment.json`), reading the same pins from `cloud-setup.sh`.
