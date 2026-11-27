@@ -73,7 +73,11 @@ jobs:
         run: |
           case "$MODE" in
             pr) ;;
-            main) [ "$REF" = refs/heads/main ] && [ "$EVENT" = push ] || { echo "::error::main mode runs only on push to main"; exit 1; } ;;
+            main)
+              if [ "$REF" != refs/heads/main ] || [ "$EVENT" != push ]; then
+                echo "::error::main mode runs only on push to main"; exit 1
+              fi
+              ;;
             *) echo "::error::mode must be pr or main, got '$MODE'"; exit 1 ;;
           esac
       - name: Check out the code to plan
