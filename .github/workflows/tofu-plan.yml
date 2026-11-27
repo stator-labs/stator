@@ -111,7 +111,7 @@ jobs:
           failed=0
           plans='{}'
           if [ "$MODE" = pr ]; then
-            next="Applies after merge: main plans again and you approve that plan in environment \`aws-apply\`."
+            next="Applies after merge, in environment \`aws-apply\`."
           else
             next="Saved for the apply job. Approve \`aws-apply\` to apply exactly these plans."
           fi
