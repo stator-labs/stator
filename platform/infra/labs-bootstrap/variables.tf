@@ -47,3 +47,17 @@ variable "reaper_job_workflow_ref" {
     error_message = "reaper_job_workflow_ref must pin one workflow file under .github/workflows/ at @refs/heads/main with no wildcards."
   }
 }
+
+variable "ci_workflow_refs" {
+  description = "Reusable workflows the IaC platform v2 roles trust, all on main."
+  type = object({
+    plan   = string
+    apply  = string
+    reaper = string
+  })
+  default = {
+    plan   = "stator-labs/stator/.github/workflows/plan.yml@refs/heads/main"
+    apply  = "stator-labs/stator/.github/workflows/apply.yml@refs/heads/main"
+    reaper = "stator-labs/stator/.github/workflows/reaper.yml@refs/heads/main"
+  }
+}

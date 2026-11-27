@@ -20,7 +20,7 @@ flowchart LR
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`.
 - **`bootstrap/`** (terminal-only, management): management state bucket, GitHub OIDC provider, legacy `runway-plan` / `runway-apply` roles (retired in `STAT-36` Step C).
-- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-plan` (PRs) and `stator-plan-main` (pushes to `main`, writes only `plans/`), both pinned to `tofu-plan.yml` on `main` by `job_workflow_ref`, `stator-apply`, `stator-reaper` and `stator-boundary` under `/stator/`. Run with `AWS_PROFILE=stator-labs make bootstrap`; run `make cutover` after the live OIDC probe passes.
+- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-boundary`, and the CI roles. Legacy roles under `/stator/`: `stator-plan` (PRs, pinned to `tofu-plan.yml`), `stator-apply`, `stator-reaper`. IaC platform v2 roles from [`modules/ci-roles`](modules/ci-roles/README.md) under `/stator/platform/`: `stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper`, unused until pipeline v2. Run with `AWS_PROFILE=stator-labs make bootstrap`, then `make cutover`.
 - **`foundation/`** (terminal-only): AWS Organization, `runway-labs` account in `stator-labs` OU, guardrail SCP, centralized root access, 90-day org CloudTrail, IAM Access Analyzer, root sign-in alert, Identity Center, budgets ($5/$15/$30), anomaly monitor and the $30 labs kill-switch SCP (`kill-switch.tf`). Personal values live in git-ignored `foundation.auto.tfvars`.
 - **`modules/`**: shared modules. Changing them plans every stack.
 
