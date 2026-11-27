@@ -69,6 +69,21 @@ resource "aws_s3_bucket_lifecycle_configuration" "state" {
     }
   }
 
+  # Saved plans (STAT-34) are only useful until the apply that follows them.
+  rule {
+    id     = "expire-saved-plans"
+    status = "Enabled"
+    filter {
+      prefix = "plans/"
+    }
+    expiration {
+      days = 7
+    }
+    noncurrent_version_expiration {
+      noncurrent_days = 1
+    }
+  }
+
   depends_on = [aws_s3_bucket_versioning.state]
 }
 
@@ -126,6 +141,32 @@ data "aws_iam_policy_document" "trust_plan" {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
       values   = ["${var.github_sub_prefix}:pull_request"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:job_workflow_ref"
+      values   = [var.plan_job_workflow_ref]
+    }
+  }
+}
+
+# Same pinned workflow as trust_plan, but only on pushes to main.
+data "aws_iam_policy_document" "trust_plan_main" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["${var.github_sub_prefix}:ref:refs/heads/main"]
     }
     condition {
       test     = "StringEquals"

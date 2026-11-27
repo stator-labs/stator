@@ -6,6 +6,10 @@ output "plan_role_arn" {
   value = aws_iam_role.plan.arn
 }
 
+output "plan_main_role_arn" {
+  value = aws_iam_role.plan_main.arn
+}
+
 output "apply_role_arn" {
   value = aws_iam_role.apply.arn
 }

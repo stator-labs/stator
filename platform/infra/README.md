@@ -20,7 +20,7 @@ flowchart LR
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`.
 - **`bootstrap/`** (terminal-only, management): management state bucket, GitHub OIDC provider, legacy `runway-plan` / `runway-apply` roles (retired in `STAT-36` Step C).
-- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-plan` (pinned to `job_workflow_ref` on `main`), `stator-apply`, `stator-reaper` and `stator-boundary` under `/stator/`. Run with `AWS_PROFILE=stator-labs make bootstrap`; run `make cutover` after the live OIDC probe passes.
+- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-plan` (PRs) and `stator-plan-main` (pushes to `main`, writes only `plans/`), both pinned to `tofu-plan.yml` on `main` by `job_workflow_ref`, `stator-apply`, `stator-reaper` and `stator-boundary` under `/stator/`. Run with `AWS_PROFILE=stator-labs make bootstrap`; run `make cutover` after the live OIDC probe passes.
 - **`foundation/`** (terminal-only): AWS Organization, `runway-labs` account in `stator-labs` OU, guardrail SCP, centralized root access, 90-day org CloudTrail, IAM Access Analyzer, root sign-in alert, Identity Center, budgets ($5/$15/$30), anomaly monitor and the $30 labs kill-switch SCP (`kill-switch.tf`). Personal values live in git-ignored `foundation.auto.tfvars`.
 - **`modules/`**: shared modules. Changing them plans every stack.
 
@@ -28,7 +28,9 @@ flowchart LR
 - **State:** S3 backend, key `<stack>/terraform.tfstate` (labs use `<lab-folder>/terraform.tfstate`), `use_lockfile = true`. CI passes `-backend-config=bucket=$TF_STATE_BUCKET` so no account ID sits in git. Checked by `tools/tofu-stacks.py check`.
 - **Tags:** every `provider "aws"` sets `default_tags` (`project`, `lab`, `runway:ephemeral`). Checked by Checkov `CKV_RUNWAY_1` ([tools/checkov](../../tools/checkov/)).
 - **IAM:** roles and policies live under `/runway/` (`/stator/` after Step B) and attach `permissions_boundary`.
-- **OIDC roles:** declare `variable "github_sub_prefix"` (no default). CI passes `vars.OIDC_SUB_PREFIX`.
+- **OIDC roles:** declare `variable "github_sub_prefix"` (no default). Only terminal-only stacks hold OIDC roles, so the bootstrap scripts pass it and CI never does.
+- **Providers:** CI plans only stacks whose lockfile lists allowed providers (`aws`, `random`, `tls`). `tools/provider-allowlist.py` runs from `main` before `tofu init`, because plan runs provider code with AWS credentials.
+- **Secrets:** CI jobs that plan get no secrets. A PR plan runs the PR's code, so it can read anything passed to it.
 - **Lock file:** commit `.terraform.lock.hcl` (`linux_amd64` + `darwin_arm64`). CI runs `-lockfile=readonly`.
 
 ## Add a stack
