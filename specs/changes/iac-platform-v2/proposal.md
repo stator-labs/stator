@@ -74,7 +74,7 @@ Approved by Yaaf on 2026-11-27. Replaces the hand-built CI roles, the approve-be
 |---|---|---|
 | AWS names | `stator-<purpose>[-<qualifier>]`, lowercase, hyphens. Keep in names only what never changes | [null-label](https://github.com/cloudposse/terraform-null-label), [Microsoft CAF](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming) |
 | IAM paths | `/stator/platform/` for CI roles and the boundary, `/stator/workload/` for roles that apply creates. Path plus name ≤ 64 characters | [IAM identifiers](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html), [IAM quotas](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html) |
-| CI role names | `stator-plan-pr`, `stator-plan-main`, `stator-apply`, `stator-reaper` | Audit §3.1 |
+| CI role names | `stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper` (IAM role names are unique per account, so v2 cannot reuse the legacy names while they exist) | Audit §3.1 |
 | Inline policy names | Drawn from one list: `state-read`, `state-lock`, `plans-write`, `iam-scoped`, `tag-read` | Audit §3.1 (5 unrelated names today) |
 | Buckets | Keep the existing ones. New buckets use the account regional namespace `stator-<purpose>-<acct>-<region>-an`, which leaves 37 characters for the prefix. The account ID is computed at apply time, never committed | [S3 namespaces](https://docs.aws.amazon.com/AmazonS3/latest/userguide/gpbucketnamespaces.html) |
 | State keys | `<stack-id>/terraform.tfstate`, with the stack ID taken from `stacks.toml` (`lab00`, `labs-bootstrap`) | [OpenTofu S3](https://opentofu.org/docs/language/settings/backends/s3/) |
