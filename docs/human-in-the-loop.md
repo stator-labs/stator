@@ -29,7 +29,7 @@ flowchart LR
 ## Enforcement map
 | Gate | Covers | Where | State |
 |---|---|---|---|
-| `aws-apply` approval | AWS applies | GitHub environment trusted by the apply role | live |
+| `aws-apply` approval | AWS applies: one saved plan, checked by SHA-256 | GitHub environment trusted by the apply role | live |
 | `main` ruleset | No direct pushes; `Docs: lint`, `Infrastructure: required checks`, `Policy: trust paths`, `Workflows: lint` | GitHub ruleset | live |
 | `Policy: trust paths` | Blocks auto-merge outside the allow-list | `policy.yml` (`pull_request_target` on `main`, reads filenames only) | live |
 | `Workflows: lint` | Unpinned actions, injection, over-broad perms, shell errors (zizmor + actionlint) | `workflows.yml` | live |

@@ -9,11 +9,13 @@ flowchart LR
     fnd["foundation/<br/>Org, SCPs, Trail, Budgets, $30 kill switch"]
   end
   subgraph ci["GitHub Actions (OIDC, no static keys)"]
-    pr["PR -> plan role (read-only)"]
-    apply["main + aws-apply -> apply role (bounded)"]
+    pr["PR -> stator-plan (read-only)"]
+    main["main -> stator-plan-main<br/>saves plan + SHA-256"]
+    apply["aws-apply approval -> stator-apply<br/>applies that saved plan"]
   end
   fnd -->|governs| labs["labs/*/infra/ (EKS, Lambda, agents)"]
   pr --> labs
+  main --> apply
   apply --> labs
 ```
 
@@ -57,7 +59,7 @@ flowchart LR
    }
    ```
 2. Lock providers: `tofu init -backend=false && tofu providers lock -platform=linux_amd64 -platform=darwin_arm64`.
-3. Open a PR for the plan comment; merge and approve `aws-apply`.
+3. Open a PR for the plan comment and merge. Read the saved plan in the main run's summary, then approve `aws-apply`.
 
 To delete a stack: merge a PR emptying its `.tf` resources first, then a PR deleting the folder.
 

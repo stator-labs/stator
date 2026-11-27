@@ -9,6 +9,7 @@
 - `bot-token.py`: mints a 1-hour `GH_TOKEN` from `~/.config/stator/stator-bot.pem` and `~/.config/stator/app-id` (`eval "$(python3 tools/bot-token.py)"`).
 - `plan-gate.py`: classifies an OpenTofu plan JSON (`tofu show -json tfplan`) into `auto` (`aws-apply-auto`), `manual` (`aws-apply` / `aws-foundation-apply`), or `deny` (hard policy failure).
 - `provider-allowlist.py`: refuses a stack whose lockfile lists a provider outside the allowlist, or that commits `.terraform/` or `terraform.d/`. The plan workflow runs it from `main` before `tofu init`.
+- `apply-alert.sh`: keeps one "Infrastructure: main is failing" issue open while a main plan or apply fails, and closes it after a clean apply.
 - `cloud-setup.sh`: pinned, SHA256-checked tool install for the Cloud-Project environment and CI.
 - `antigravity-setup.sh`: user-space install for Antigravity cloud VMs (`.agents/environment.json`), reading the same pins from `cloud-setup.sh`.
 - `checkov/`: custom checkov check `CKV_RUNWAY_1`, which requires `default_tags` on every AWS provider.

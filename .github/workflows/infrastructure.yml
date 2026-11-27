@@ -1,9 +1,12 @@
 name: Infrastructure
 
-# PR: fmt, validate, tflint, checkov, then `tofu plan` per changed stack (plan role),
+# PR: fmt, validate, tflint, checkov, then `tofu plan` per changed stack (stator-plan),
 #     posted as one PR comment that is updated in place.
-# main: `tofu apply` per changed stack in environment aws-apply (apply role, needs approval).
-# The bootstrap stack is never planned or applied here: only `make bootstrap` touches it.
+# main: `tofu plan` per stack changed since the last green main run (stator-plan-main) saves
+#     each plan file. You read the plans in the run summary, approve environment aws-apply,
+#     and the apply job applies exactly those files (stator-apply). No changes, no approval.
+#     A failed main plan or apply keeps one GitHub issue open until a clean apply.
+# Terminal-only stacks (tools/tofu-stacks.py) are never planned or applied here.
 
 on:
   pull_request:
@@ -25,11 +28,11 @@ on:
 permissions:
   contents: read
 
-# PRs: a new push cancels the old plan. main: no concurrency group, because GitHub
-# drops queued runs beyond one and a dropped run would skip an apply. The S3
-# lockfile (-lock-timeout) serializes applies instead.
+# PRs: a new push cancels the old plan. main: one run at a time. GitHub keeps one queued
+# run and cancels older queued ones, which is safe because each main run plans every stack
+# changed since the last green main run, not just its own push.
 concurrency:
-  group: infrastructure-${{ github.event.pull_request.number || github.run_id }}
+  group: infrastructure-${{ github.event.pull_request.number || (github.event_name == 'push' && 'main') || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -41,6 +44,9 @@ jobs:
     name: "Infrastructure: detect stacks"
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read # main: find the last green main run
     outputs:
       stacks: ${{ steps.stacks.outputs.stacks }}
     steps:
@@ -50,9 +56,21 @@ jobs:
           fetch-depth: 0
       - id: stacks
         env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
           HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "$EVENT" = push ]; then
+            # Diff against the last green main run, so stacks from a failed, rejected or
+            # cancelled run are planned again. No green run found: plan every stack.
+            BASE=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow infrastructure.yml --branch main \
+              --event push --status success --limit 1 --json headSha --jq '.[0].headSha // empty')
+            if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+              BASE=0000000000000000000000000000000000000000
+            fi
+            echo "base: last green main run at $BASE"
+          fi
           stacks=$(python3 tools/tofu-stacks.py changed "$BASE" "$HEAD")
           echo "changed stacks: $stacks"
           echo "stacks=$stacks" >> "$GITHUB_OUTPUT"
@@ -111,11 +129,11 @@ jobs:
       id-token: write # OIDC -> stator-plan
       pull-requests: write # the plan comment
     uses: stator-labs/stator/.github/workflows/tofu-plan.yml@main # zizmor: ignore[unpinned-uses] AWS OIDC job_workflow_ref requires @refs/heads/main
+    # No secrets: PR plans run the PR's own code, which can read anything passed in.
     with:
       stacks: ${{ needs.detect-stacks.outputs.stacks }}
       head_sha: ${{ github.event.pull_request.head.sha }}
       pr_number: ${{ github.event.pull_request.number }}
-    # No secrets: PR plans run the PR's own code, which can read anything passed in.
 
   required-checks:
     name: "Infrastructure: required checks"
@@ -148,16 +166,51 @@ jobs:
             [ "$PLAN" = success ] || { echo "::error::stacks changed but Infrastructure: plan result is $PLAN (fork PRs are not planned; a maintainer must push the branch to this repo)"; exit 1; }
           fi
 
-  apply:
-    name: "Infrastructure: apply"
+  plan-main:
+    name: "Infrastructure: plan main"
     needs: [detect-stacks, validate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-stacks.outputs.stacks != '[]'
+    permissions:
+      contents: read
+      id-token: write # OIDC -> stator-plan-main
+      pull-requests: write # declared by the reusable workflow; unused in main mode
+    uses: stator-labs/stator/.github/workflows/tofu-plan.yml@main # zizmor: ignore[unpinned-uses] AWS OIDC job_workflow_ref requires @refs/heads/main
+    with:
+      stacks: ${{ needs.detect-stacks.outputs.stacks }}
+      head_sha: ${{ github.sha }}
+      mode: main
+
+  plan-main-alert:
+    name: "Infrastructure: plan main alert"
+    # plan-main has no environment, so its failure is a real failure, never a rejection.
+    needs: [plan-main]
+    if: failure() && needs.plan-main.result == 'failure'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # the "main is failing" issue
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tools
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          ASSIGNEE: yaaf-some
+        run: tools/apply-alert.sh open 'The main plan'
+
+  apply:
+    name: "Infrastructure: apply"
+    needs: [plan-main]
+    if: needs.plan-main.outputs.plans != '' && needs.plan-main.outputs.plans != '{}'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     environment: aws-apply # required reviewer; deployments from main only
     permissions:
       contents: read
-      id-token: write # OIDC -> runway-apply
+      id-token: write # OIDC -> stator-apply
+      issues: write # the "main is failing" issue
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -175,20 +228,38 @@ jobs:
       - name: Show OIDC claims (the role's trust policy must match them)
         if: failure() && steps.aws.outcome == 'failure'
         run: python3 tools/oidc-claims.py
-      - name: tofu apply
+      - name: tofu apply (the saved plans only)
         env:
-          STACKS: ${{ needs.detect-stacks.outputs.stacks }}
+          PLANS: ${{ needs.plan-main.outputs.plans }}
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
         run: |
           set -euo pipefail
           echo "::add-mask::$AWS_ACCOUNT_ID"
-          for dir in $(jq -r '.[]' <<<"$STACKS"); do
+          for dir in $(jq -r 'keys[]' <<<"$PLANS"); do
             echo "::group::$dir"
+            key=$(jq -r --arg d "$dir" '.[$d].key' <<<"$PLANS")
+            want=$(jq -r --arg d "$dir" '.[$d].sha256' <<<"$PLANS")
             tofu -chdir="$dir" init -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
-            tofu -chdir="$dir" plan -lock-timeout=15m -out=tfplan
+            aws s3 cp --only-show-errors "s3://$TF_STATE_BUCKET/$key" "$dir/tfplan"
+            got=$(sha256sum "$dir/tfplan" | cut -d' ' -f1)
+            if [ "$got" != "$want" ]; then
+              echo "::error::$dir: saved plan sha256 $got does not match the approved plan $want"
+              exit 1
+            fi
             tofu -chdir="$dir" show -json tfplan > "$RUNNER_TEMP/plan.json"
             python3 tools/plan-gate.py "$dir" "$RUNNER_TEMP/plan.json"
+            # OpenTofu refuses a saved plan if the state changed since it was made.
             tofu -chdir="$dir" apply -lock-timeout=15m tfplan
             echo "::endgroup::"
           done
+      - name: Close the "main is failing" issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: tools/apply-alert.sh close
+      - name: Open or update the "main is failing" issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSIGNEE: yaaf-some
+        run: tools/apply-alert.sh open 'The apply'
