@@ -1,0 +1,86 @@
+{
+  "about": "One entry per OpenTofu stack, plus the plan-gate rules. The pipeline reads this file from main, never from a PR (IaC platform v2). JSON, not TOML: tomllib needs Python 3.11 and the owner's Mac ships 3.9.",
+  "stacks": {
+    "bootstrap": {
+      "dir": "platform/infra/bootstrap",
+      "account": "management",
+      "ci": false,
+      "why": "Creates the management state bucket. Terminal only."
+    },
+    "foundation": {
+      "dir": "platform/infra/foundation",
+      "account": "management",
+      "ci": false,
+      "why": "Organization, SCPs, budgets and trail. SCPs do not bind the management account, so no CI role exists there."
+    },
+    "labs-bootstrap": {
+      "dir": "platform/infra/labs-bootstrap",
+      "account": "labs",
+      "ci": false,
+      "why": "Creates the CI roles. CI never manages its own roles."
+    },
+    "lab00": {
+      "dir": "labs/00-account-foundation/infra",
+      "account": "labs",
+      "ci": true,
+      "state_key": "00-ground-rules",
+      "floor": "auto"
+    }
+  },
+  "shared_paths": [
+    "platform/infra/modules/",
+    "platform/stacks.json",
+    ".github/workflows/infrastructure.yml",
+    "tools/tofu-stacks.py",
+    "tools/checkov/",
+    ".tflint.hcl"
+  ],
+  "gate": {
+    "max_auto_changes": 5,
+    "boundary_suffix": ":policy/stator/stator-boundary",
+    "workload_role_path": "/stator/workload/",
+    "forbidden_actions": [
+      "*",
+      "iam:*",
+      "organizations:*",
+      "sts:*",
+      "account:*"
+    ],
+    "never_destroy_types": [
+      "aws_organizations_organization",
+      "aws_organizations_account",
+      "aws_cloudtrail",
+      "aws_iam_openid_connect_provider"
+    ],
+    "never_destroy_addresses": [
+      "aws_s3_bucket.state",
+      "aws_s3_bucket.trail",
+      "aws_organizations_policy.labs",
+      "aws_organizations_policy_attachment.labs"
+    ],
+    "manual_prefixes": [
+      "aws_iam_",
+      "aws_organizations_",
+      "aws_ssoadmin_",
+      "aws_identitystore_",
+      "aws_kms_",
+      "aws_budgets_",
+      "aws_ce_",
+      "aws_ram_",
+      "aws_accessanalyzer_"
+    ],
+    "manual_types": [
+      "aws_s3_bucket_policy",
+      "aws_s3_bucket_public_access_block",
+      "aws_sns_topic_policy"
+    ]
+  },
+  "allowed_providers": {
+    "why": "Providers whose plan-time behaviour is API reads only. Add one only after reading what its data sources do: anything that runs a program or makes arbitrary HTTP calls stays out (GitFlops).",
+    "list": [
+      "registry.opentofu.org/hashicorp/aws",
+      "registry.opentofu.org/hashicorp/random",
+      "registry.opentofu.org/hashicorp/tls"
+    ]
+  }
+}

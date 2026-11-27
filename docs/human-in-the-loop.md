@@ -31,7 +31,7 @@ flowchart LR
 |---|---|---|---|
 | `aws-apply` approval | AWS applies: one saved plan, checked by SHA-256 | GitHub environment trusted by the apply role | live |
 | `main` ruleset | No direct pushes; `Docs: lint`, `Infrastructure: required checks`, `Policy: trust paths`, `Workflows: lint` | GitHub ruleset | live |
-| `Policy: trust paths` | Blocks auto-merge outside the allow-list | `policy.yml` (`pull_request_target` on `main`, reads filenames only) | live |
+| `Policy: trust paths` | Blocks auto-merge outside the allow-list | `policy.yml` (`pull_request_target` on `main`, reads filenames only). An Actions event policy allows that trigger for this file only (`.github/actions-policies/`) | live |
 | `Workflows: lint` | Unpinned actions, injection, over-broad perms, shell errors (zizmor + actionlint) | `workflows.yml` | live |
 | Dependabot | SHA-pinned action bumps, 7-day cooldown | `.github/dependabot.yml` | live |
 | Agent hook guardrails | Denies PR merge/review and reading secrets (`.env`, `*.key`, `*.auto.tfvars`); asks before `aws`, `tofu apply/destroy`, force push | `.agents/hooks.json` + `.agents/hooks/guardrails.py` | live |

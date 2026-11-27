@@ -1,6 +1,8 @@
 name: Policy
 
 # Decides whether a PR may merge without Yaaf's click.
+# GitHub blocks pull_request_target in public repos from 2026-12-02 unless an Actions event
+# policy allows it. .github/actions-policies/policy-check.json allows it for this file only.
 # It runs main's copy of this file (pull_request_target), so a PR cannot change the rule that
 # judges it. It never checks out or runs PR code: it reads the changed file names from the API.
 on:

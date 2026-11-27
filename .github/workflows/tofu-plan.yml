@@ -70,7 +70,11 @@ jobs:
           persist-credentials: false
           ref: main
           path: trusted
-          sparse-checkout: tools
+          # Scripts and the gate rules (platform/stacks.json) always come from main.
+          sparse-checkout: |
+            /tools/
+            /platform/stacks.json
+          sparse-checkout-cone-mode: false
       - name: Install pinned tofu
         run: sudo trusted/tools/cloud-setup.sh tofu
       - name: Provider allowlist (before any provider code runs)
