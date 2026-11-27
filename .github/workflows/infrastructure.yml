@@ -19,6 +19,7 @@ on:
       - "labs/*/infra/**"
       - ".github/workflows/infrastructure.yml"
       - "tools/tofu-stacks.py"
+      - "platform/stacks.json"
       - "tools/checkov/**"
       - ".tflint.hcl"
 
@@ -83,6 +84,7 @@ jobs:
         run: |
           python3 tools/plan-gate.py --self-test
           python3 tools/provider-allowlist.py --self-test
+          python3 .agents/hooks/guardrails.py --self-test
       - name: tofu test (mocked providers, no AWS access)
         # Runs every stack that has a tests/ folder. No credentials: providers are mocked.
         run: |
@@ -151,7 +153,9 @@ jobs:
   apply:
     name: "Infrastructure: apply"
     needs: [detect-stacks, validate]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-stacks.outputs.stacks != '[]'
+    # Paused (IaC platform v2, task 1): this job asks for approval before it plans, so the
+    # approver never sees the plan and a stale run applies old code. Pipeline v2 (task 8) replaces it.
+    if: vars.LEGACY_APPLY_ENABLED == 'true' # unset: never runs (actionlint rejects a constant false)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     environment: aws-apply # required reviewer; deployments from main only
