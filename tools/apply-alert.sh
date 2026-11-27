@@ -19,7 +19,8 @@ run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 sha=${GITHUB_SHA:0:12}
 
 find_open() {
-  gh issue list "${repo[@]}" --state open --search "\"$1\" in:title" --json number,title \
+  # Not --search: the search index lags writes, which would duplicate or orphan the issue.
+  gh issue list "${repo[@]}" --state open --limit 200 --json number,title \
     --jq "[.[] | select(.title == \"$1\")][0].number // empty"
 }
 
