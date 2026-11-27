@@ -16,6 +16,7 @@ roles: [SA, Platform, Cloud, SRE, Security]
 - **Budgets & kill switch:** budgets created in [PR #9 run](https://github.com/yaaf-some/cloud-project/actions/runs/44581039403/attempts/1), migrated to [platform/infra/foundation](../../platform/infra/foundation/) in PR #18 ([run 44944710382](https://github.com/stator-labs/stator/actions/runs/44944710382), 0 destroyed), and applied by Yaaf on 2026-11-21: `make plan` shows zero drift, `runway-labs-kill-switch` is `STANDBY`, SCP targets `[]`, MTD spend `$0.046`.
 - **Nightly reaper (dry run):** created in [run 44703993484](https://github.com/yaaf-some/cloud-project/actions/runs/44703993484); first OIDC dry run passed in [run 44704490487](https://github.com/yaaf-some/cloud-project/actions/runs/44704490487).
 - **Org guardrails (2026-11-20):** `foundation/` applied (`1 imported, 24 added, 1 changed, 0 destroyed`). In labs, `ec2 describe-instances` succeeded in `us-west-2` and failed with `explicit deny in a service control policy` in `eu-west-1` and on `RoleManager/Enabled=true`.
+- **Free account hardening (2026-11-27):** PR #36 merged, Yaaf approved `aws-apply`, and [run 46028414977](https://github.com/stator-labs/stator/actions/runs/46028414977) applied `11 added, 0 changed, 0 destroyed`: EBS encryption by default, snapshot, AMI and SSM document public-sharing blocks, IMDSv2 defaults (us-east-1 and us-west-2) and the account S3 public access block.
 - **Mocked OpenTofu tests (no AWS creds):** `tofu test` passes [3 Lab 00 tests](infra/tests/account-foundation.tftest.hcl) and [20 foundation tests](../../platform/infra/foundation/tests/foundation.tftest.hcl) in CI on every PR (verified via mutation breaks).
 - **Still open (keeps Lab 00 🔨):** real reaper deletion with 6-hour age check, `make nuke` (arrives with Lab 03), and kill-switch game day (`STAT-36` Step D).
 
@@ -98,6 +99,7 @@ In 5 minutes, a reviewer checks:
 - First apply failed with `Limit exceeded on dimensional spend monitor creation` because AWS already had a default services monitor. Switched to a custom account monitor.
 - First CI plan failed `AssumeRoleWithWebIdentity` because immutable OIDC `sub` claims include numeric IDs. Added `tools/oidc-claims.py` to print live claims on failure.
 - Missing `ProductAttributes` key in the anomaly monitor JSON forced replacement on every plan; spelling out all 7 keys fixed drift.
+- An apply from PR #20 waited 5 days on `aws-apply`. Approving it after PR #36 would have applied old code and destroyed the hardening. Yaaf rejected it; the saved-plan flow (STAT-34) only asks for approval when a plan has changes.
 - `tofu test` 1.13.9 crashed when an `import` block was present; removed the one-time org import block after apply.
 - Three manual test budgets (`runway-monthly-*`) duplicated the stack's budgets; deleted manually on Nov 19.
 - IAM admin initially lacked Billing/Cost Explorer console access until enabled once from root.
