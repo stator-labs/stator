@@ -65,6 +65,49 @@ run "plan_role_pins_pull_request_and_reusable_main_workflow" {
   }
 }
 
+run "main_plan_role_pins_main_pushes_and_writes_only_saved_plans" {
+  command = plan
+
+  assert {
+    condition     = aws_iam_role.plan_main.name == "stator-plan-main" && aws_iam_role.plan_main.path == "/stator/"
+    error_message = "stator-plan-main must sit under /stator/."
+  }
+
+  assert {
+    condition = (
+      one([for c in one(data.aws_iam_policy_document.trust_plan_main.statement).condition : c.values
+      if c.variable == "token.actions.githubusercontent.com:sub"])
+      == tolist(["repo:owner@1/repo@2:ref:refs/heads/main"])
+    )
+    error_message = "stator-plan-main must trust pushes to main only."
+  }
+
+  assert {
+    condition = (
+      one([for c in one(data.aws_iam_policy_document.trust_plan_main.statement).condition : c.values
+      if c.variable == "token.actions.githubusercontent.com:job_workflow_ref"])
+      == tolist(["stator-labs/stator/.github/workflows/tofu-plan.yml@refs/heads/main"])
+    )
+    error_message = "stator-plan-main must pin job_workflow_ref to the reusable plan workflow on main."
+  }
+
+  assert {
+    condition = (
+      one(data.aws_iam_policy_document.plan_main_save.statement).actions == toset(["s3:PutObject"])
+      && one(data.aws_iam_policy_document.plan_main_save.statement).resources == toset(["arn:aws:s3:::stator-tfstate-222222222222/plans/*"])
+    )
+    error_message = "stator-plan-main may write under plans/ only."
+  }
+
+  assert {
+    condition = contains(
+      [for s in data.aws_iam_policy_document.apply_iam.statement : s if s.sid == "ProtectPipeline" && s.effect == "Deny"][0].resources,
+      "arn:aws:iam::222222222222:role/stator/stator-plan-main"
+    )
+    error_message = "stator-apply must explicitly deny modifying stator-plan-main."
+  }
+}
+
 run "apply_role_trusts_environment_and_protects_pipeline_and_state" {
   command = plan
 

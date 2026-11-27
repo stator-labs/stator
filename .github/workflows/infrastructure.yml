@@ -79,6 +79,10 @@ jobs:
             tofu -chdir="$dir" validate
             echo "::endgroup::"
           done
+      - name: Script self-tests
+        run: |
+          python3 tools/plan-gate.py --self-test
+          python3 tools/provider-allowlist.py --self-test
       - name: tofu test (mocked providers, no AWS access)
         # Runs every stack that has a tests/ folder. No credentials: providers are mocked.
         run: |
@@ -111,8 +115,7 @@ jobs:
       stacks: ${{ needs.detect-stacks.outputs.stacks }}
       head_sha: ${{ github.event.pull_request.head.sha }}
       pr_number: ${{ github.event.pull_request.number }}
-    secrets:
-      ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+    # No secrets: PR plans run the PR's own code, which can read anything passed in.
 
   required-checks:
     name: "Infrastructure: required checks"
@@ -176,9 +179,6 @@ jobs:
         env:
           STACKS: ${{ needs.detect-stacks.outputs.stacks }}
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
-          TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
-          # Read by a stack that declares variable "github_sub_prefix" (OIDC trust); ignored by the rest.
-          TF_VAR_github_sub_prefix: ${{ vars.OIDC_SUB_PREFIX }}
           AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
         run: |
           set -euo pipefail

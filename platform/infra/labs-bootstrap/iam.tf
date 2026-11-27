@@ -38,6 +38,44 @@ resource "aws_iam_role_policy" "plan_state" {
   policy = data.aws_iam_policy_document.plan_state.json
 }
 
+# ---------------------------------------------------------------- main plan role
+
+# Plans each push to main and saves the plan file for the apply job (STAT-34). A separate
+# role so PR code, which runs as stator-plan, can never write or replace a saved plan.
+resource "aws_iam_role" "plan_main" {
+  name                 = "stator-plan-main"
+  path                 = local.iam_path
+  description          = "GitHub Actions reusable plan workflow on pushes to main: tofu plan in labs, saves plans/."
+  assume_role_policy   = data.aws_iam_policy_document.trust_plan_main.json
+  max_session_duration = 3600
+}
+
+resource "aws_iam_role_policy_attachment" "plan_main_readonly" {
+  role       = aws_iam_role.plan_main.name
+  policy_arn = "arn:${local.partition}:iam::aws:policy/ReadOnlyAccess"
+}
+
+resource "aws_iam_role_policy" "plan_main_state" {
+  name   = "tofu-state"
+  role   = aws_iam_role.plan_main.id
+  policy = data.aws_iam_policy_document.plan_state.json
+}
+
+data "aws_iam_policy_document" "plan_main_save" {
+  statement {
+    # Saved plans only. The apply job checks each file against the SHA-256 this job reports.
+    sid       = "SavePlans"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.state.arn}/plans/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "plan_main_save" {
+  name   = "save-plans"
+  role   = aws_iam_role.plan_main.id
+  policy = data.aws_iam_policy_document.plan_main_save.json
+}
+
 # ---------------------------------------------------------------- apply role
 
 # In the labs account, the phase 2 guardrail SCP bounds PowerUserAccess to two
@@ -119,6 +157,7 @@ data "aws_iam_policy_document" "apply_iam" {
     ]
     resources = [
       aws_iam_role.plan.arn,
+      "${local.iam_arn}:role/stator/stator-plan-main",
       "${local.iam_arn}:role/stator/stator-apply",
       "${local.iam_arn}:role/stator/stator-reaper",
       "${local.iam_arn}:policy/stator/stator-apply-iam",

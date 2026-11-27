@@ -21,7 +21,7 @@ Verified free-tier services and operational limits as of November 2026. Probe an
 
 - **Limits:** Free minutes on public repositories using standard GitHub-hosted runners.
 - **Role:** Runs OIDC-authenticated OpenTofu plans on PRs, saved-plan applies on `main`, nightly resource checks (`reaper.yml`), and deterministic data collectors.
-- **Guardrails:** Pin every action by full 40-character commit SHA and bump via [dependabot.yml](../.github/dependabot.yml) with a 7-day cooldown. Default workflow `permissions` to `read-all` or `{}` and grant minimum permissions per job. Pass `-backend-config=bucket=$TF_STATE_BUCKET` and `vars.OIDC_SUB_PREFIX` from repo variables so no account ID sits in Git.
+- **Guardrails:** Pin every action by full 40-character commit SHA and bump via [dependabot.yml](../.github/dependabot.yml) with a 7-day cooldown. Default workflow `permissions` to `read-all` or `{}` and grant minimum permissions per job. Pass `-backend-config=bucket=$TF_STATE_BUCKET` from a repo variable so no account ID sits in Git. Plan jobs get no secrets, and their scripts run from `main`, not the PR.
 
 ## 2. GitHub Agentic Workflows (`github/gh-aw`)
 

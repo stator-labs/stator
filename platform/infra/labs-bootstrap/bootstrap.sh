@@ -85,6 +85,7 @@ fi
 
 if [ "$MODE" = cutover ]; then
   PLAN_ROLE=$(tofu output -raw plan_role_arn)
+  PLAN_MAIN_ROLE=$(tofu output -raw plan_main_role_arn)
   APPLY_ROLE=$(tofu output -raw apply_role_arn)
   REAPER_ROLE=$(tofu output -raw reaper_role_arn)
   REGION=$(tofu output -raw region)
@@ -92,6 +93,7 @@ if [ "$MODE" = cutover ]; then
   say "Pointing $REPO Actions variables at the labs account"
   set_var() { gh variable set "$1" --repo "$REPO" --body "$2"; }
   set_var AWS_PLAN_ROLE_ARN "$PLAN_ROLE"
+  set_var AWS_PLAN_MAIN_ROLE_ARN "$PLAN_MAIN_ROLE"
   set_var AWS_APPLY_ROLE_ARN "$APPLY_ROLE"
   set_var AWS_REAPER_ROLE_ARN "$REAPER_ROLE"
   set_var TF_STATE_BUCKET "$BUCKET"
