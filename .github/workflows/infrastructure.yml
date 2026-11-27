@@ -151,7 +151,9 @@ jobs:
   apply:
     name: "Infrastructure: apply"
     needs: [detect-stacks, validate]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-stacks.outputs.stacks != '[]'
+    # Paused (IaC platform v2, task 1): this job asks for approval before it plans, so the
+    # approver never sees the plan and a stale run applies old code. Pipeline v2 (task 8) replaces it.
+    if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     environment: aws-apply # required reviewer; deployments from main only
