@@ -116,7 +116,29 @@ Tier legend: **T1** a PR Yaaf merges. **T2** Yaaf approves and, where stated, ap
 - **Verify:** a dispatch Drift run on clean `main` opens no issue.
 - **Done when:** merged and settings recorded.
 
-## 13. Docs, specs and cleanup
+## 13. Remove `runway` names and use one region
+Task 10 covers tags, the checkov ID and pipeline code. This task renames everything else to `stator-*` and moves everything to `us-east-1`, cheapest first. Each AWS step plans first and keeps the old resource until the new one works.
+- **Context manifest:**
+  - `platform/infra/foundation/organization.tf`
+  - `platform/infra/foundation/identity-center.tf`
+  - `platform/infra/foundation/guardrails.tf`
+  - `platform/infra/foundation/kill-switch.tf`
+  - `platform/infra/foundation/budgets.tf`
+  - `platform/infra/foundation/trail.tf`
+  - `platform/infra/foundation/tests/foundation.tftest.hcl`
+  - `platform/infra/bootstrap/main.tf`
+  - `platform/infra/README.md`
+- **Change:**
+  1. Code only: docs, specs, the research report filename, the plan comment marker. Tier T1.
+  2. In place: SCP names and the account names (`runway-labs` to `stator-labs`, `Yaaf Some` to `stator-management`). Check first that the provider updates each one without replacing it. Tier T2.
+  3. Create, switch, delete: `runway-budget-kill-switch` role, budgets, anomaly monitor and root sign-in alert (`anomaly.tf`, `alerts.tf`), `runway-org-external-access` analyzer. Tier T2.
+  4. `runway-admin` permission set: create `stator-admin` next to it, sign in with it, point `sso_role_name` in `~/.aws/config` at it, then remove the old one. Never both gone at once. Tier T2.
+  5. Data moves, all into `us-east-1`: new state buckets in both accounts named with the account regional namespace (`stator-tfstate-<account id>-us-east-1-an`), `tofu init -migrate-state` for every stack, old buckets kept until every stack plans clean. New trail with its home in `us-east-1` and a new log bucket; the old log bucket stays until its 90-day retention ends, then goes. Tier T2.
+  6. One region, `us-east-1`. Identity Center and the root sign-in alert cannot leave it, and 19 of 24 tagged resources already live there (sweep, 2026-11-28). `allowed_regions = ["us-east-1"]`; every provider and backend (`versions.tf`, `bootstrap.sh`) moves there; Lab 00 hardening keeps only `us-east-1`; `AWS_REGION` and `tools/ci-target.sh` follow the new bucket name. Delete the default VPCs in every region except labs `us-east-1` (17 in management, 1 in labs). Tier T2.
+- **Verify:** `git grep -i runway -- . ':!specs/changes'` returns only dated "What broke" history; `git grep us-west-2` returns only history; the region sweep shows no tagged resource and no default VPC outside `us-east-1`; `aws iam list-roles --path-prefix /runway/` and `aws organizations list-policies --filter SERVICE_CONTROL_POLICY` show no `runway-*` names.
+- **Done when:** no `runway-*` resource and nothing outside `us-east-1` remains in either account, except the old trail log bucket, with its delete date recorded in the Lab 00 README.
+
+## 14. Docs, specs and cleanup
 - **Context manifest:**
   - `platform/infra/README.md`
   - `specs/STACK.md`
