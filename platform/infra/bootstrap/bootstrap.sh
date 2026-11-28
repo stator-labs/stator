@@ -2,33 +2,19 @@
 # Called by `make bootstrap`. Idempotent:
 #   1. apply this stack (local state on the first run, the S3 bucket afterwards)
 #   2. move local state into the bucket (first run only)
-#   3. create/update GitHub environment `aws-apply`, the repo variables and the ALERT_EMAIL secret
+# It writes nothing to GitHub: CI never assumes a management-account role (IaC platform v2).
 set -euo pipefail
 cd "$(dirname "$0")"
 
 MODE=${1:-apply}
-: "${AWS_PROFILE:?}" "${REPO:?}"
+: "${AWS_PROFILE:?}"
 STATE_KEY=bootstrap/terraform.tfstate
 OVERRIDE=local_override.tf
 
 say() { printf '\n==> %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
-ALERT_EMAIL=$(printf '%s' "${ALERT_EMAIL:-}" | tr -d '[:space:]')
-[ "$MODE" = plan ] || [ -n "$ALERT_EMAIL" ] \
-  || die "ALERT_EMAIL is empty. Set it in the environment or run: make bootstrap ALERT_EMAIL=<your alert email>"
-for bin in aws tofu gh; do command -v "$bin" >/dev/null || die "$bin not found"; done
-gh auth status >/dev/null 2>&1 || die "gh is not logged in: run gh auth login"
-
-say "GitHub OIDC subject of $REPO"
-# GitHub decides what the token's `sub` looks like (repo name, or owner and repo IDs when
-# immutable subjects are on). Trust whatever GitHub reports; never rebuild it from the name.
-SUB_PREFIX=$(gh api "repos/$REPO/actions/oidc/customization/sub" --jq '.sub_claim_prefix // empty') \
-  || die "cannot read the OIDC settings of $REPO (the gh login needs admin rights on it)"
-[ -n "$SUB_PREFIX" ] \
-  || die "GitHub reports no sub_claim_prefix for $REPO; run: gh api repos/$REPO/actions/oidc/customization/sub"
-echo "sub prefix: $SUB_PREFIX"
-export TF_VAR_github_sub_prefix="$SUB_PREFIX"
+for bin in aws tofu; do command -v "$bin" >/dev/null || die "$bin not found"; done
 
 say "AWS credentials from profile $AWS_PROFILE"
 # Export the profile's short-lived keys (Identity Center session)
@@ -79,47 +65,5 @@ if [ "$FIRST_RUN" = true ]; then
   rm -f terraform.tfstate terraform.tfstate.backup
 fi
 
-PLAN_ROLE=$(tofu output -raw plan_role_arn)
-APPLY_ROLE=$(tofu output -raw apply_role_arn)
-FOUNDATION_PLAN_ROLE=$(tofu output -raw foundation_plan_role_arn)
-FOUNDATION_APPLY_ROLE=$(tofu output -raw foundation_apply_role_arn)
-REGION=$(tofu output -raw region)
-
-say "GitHub environments aws-apply and aws-foundation-apply on $REPO"
-USER_ID=$(gh api user --jq .id)
-for env_name in aws-apply aws-foundation-apply; do
-  gh api -X PUT "repos/$REPO/environments/$env_name" --input - >/dev/null <<JSON
-{
-  "reviewers": [{"type": "User", "id": $USER_ID}],
-  "prevent_self_review": false,
-  "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}
-}
-JSON
-  if ! gh api "repos/$REPO/environments/$env_name/deployment-branch-policies" \
-       --jq '.branch_policies[] | select(.type == "branch") | .name' | grep -qx main; then
-    gh api -X POST "repos/$REPO/environments/$env_name/deployment-branch-policies" \
-      -f name=main -f type=branch >/dev/null
-  fi
-done
-
-say "Repo variables and secret"
-set_var() { gh variable set "$1" --repo "$REPO" --body "$2"; }
-set_var AWS_PLAN_ROLE_ARN "$PLAN_ROLE"
-set_var AWS_APPLY_ROLE_ARN "$APPLY_ROLE"
-set_var AWS_FOUNDATION_PLAN_ROLE_ARN "$FOUNDATION_PLAN_ROLE"
-set_var AWS_FOUNDATION_APPLY_ROLE_ARN "$FOUNDATION_APPLY_ROLE"
-set_var TF_STATE_BUCKET "$BUCKET"
-set_var AWS_REGION "$REGION"
-# Not secret (owner and repo IDs are public). Stacks that create roles GitHub Actions may assume
-# (e.g. the reaper) build their trust from it. The name can't start with GITHUB_.
-set_var OIDC_SUB_PREFIX "$SUB_PREFIX"
-# The repo is public: variables print unmasked in logs, secrets are masked.
-# The address goes in as a secret and is never echoed. Remove any old variable.
-gh variable delete ALERT_EMAIL --repo "$REPO" >/dev/null 2>&1 || true
-printf '%s' "$ALERT_EMAIL" | gh secret set ALERT_EMAIL --repo "$REPO" >/dev/null
-
 say "Done"
-gh variable list --repo "$REPO" --json name --jq '.[].name | "variable: " + .'
-gh secret list --repo "$REPO" --json name --jq '.[].name | "secret:   " + .'
-gh api "repos/$REPO/environments/aws-apply" \
-  --jq '"aws-apply reviewers: \([.protection_rules[]? | select(.type=="required_reviewers") | .reviewers[].reviewer.login] | join(","))"'
+echo "state bucket: $(tofu output -raw state_bucket)"

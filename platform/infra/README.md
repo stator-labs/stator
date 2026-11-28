@@ -19,7 +19,7 @@ flowchart LR
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`.
-- **`bootstrap/`** (terminal-only, management): management state bucket, GitHub OIDC provider, legacy `runway-plan` / `runway-apply` roles (retired in `STAT-36` Step C).
+- **`bootstrap/`** (terminal-only, management): the management state bucket only. No OIDC provider and no CI role: SCPs do not apply to the management account, so nothing there is CI-reachable.
 - **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-plan` (PRs) and `stator-plan-main` (pushes to `main`, writes only `plans/`), both pinned to `tofu-plan.yml` on `main` by `job_workflow_ref`, `stator-apply`, `stator-reaper` and `stator-boundary` under `/stator/`. Run with `AWS_PROFILE=stator-labs make bootstrap`; run `make cutover` after the live OIDC probe passes.
 - **`foundation/`** (terminal-only): AWS Organization, `runway-labs` account in `stator-labs` OU, guardrail SCP, centralized root access, 90-day org CloudTrail, IAM Access Analyzer, root sign-in alert, Identity Center, budgets ($5/$15/$30), anomaly monitor and the $30 labs kill-switch SCP (`kill-switch.tf`). Personal values live in git-ignored `foundation.auto.tfvars`.
 - **`modules/`**: shared modules. Changing them plans every stack.
