@@ -1,0 +1,273 @@
+name: Plan
+
+# Reusable plan workflow (IaC platform v2). The v2 plan roles trust only this file on main
+# (job_workflow_ref), so it is the only code path to them.
+#   pr:   stator-ci-plan-pr. Plans without the state lock and posts or updates one PR comment.
+#   main: stator-ci-plan-main. Saves each plan file under plans/<run_id>-<attempt>/ in the
+#         state bucket and returns its SHA-256 and the run's lane, so apply.yml applies
+#         exactly the plan you read.
+# The checkout under src/ is the code being planned and is not trusted. Every script this
+# workflow runs, and the stack map, come from main's checkout under trusted/.
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "pr or main"
+        required: true
+        type: string
+      stacks:
+        description: JSON array of stack dirs
+        required: true
+        type: string
+      head_sha:
+        description: Commit being planned (PR head or main)
+        required: true
+        type: string
+      pr_number:
+        description: Pull request number (pr mode only)
+        required: false
+        type: number
+        default: 0
+      account:
+        description: Account name from platform/stacks.json; selects AWS_<ACCOUNT>_ACCOUNT_ID
+        required: false
+        type: string
+        default: labs
+    outputs:
+      plans:
+        description: 'main mode: JSON object {stack dir: plan file SHA-256} for stacks with changes'
+        value: ${{ jobs.plan.outputs.plans }}
+      lane:
+        description: "main mode: highest lane across the saved plans: auto, manual or none"
+        value: ${{ jobs.plan.outputs.lane }}
+      attempt:
+        description: "main mode: run attempt that saved the plans (part of the plan key)"
+        value: ${{ jobs.plan.outputs.attempt }}
+      summary:
+        description: "main mode: one markdown line per stack"
+        value: ${{ jobs.plan.outputs.summary }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: "Plan: run"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # OIDC -> stator-ci-plan-pr or stator-ci-plan-main
+      pull-requests: write # the plan comment (pr mode)
+    outputs:
+      plans: ${{ steps.plan.outputs.plans }}
+      lane: ${{ steps.plan.outputs.lane }}
+      attempt: ${{ github.run_attempt }}
+      summary: ${{ steps.plan.outputs.summary }}
+    steps:
+      - name: Check inputs
+        env:
+          MODE: ${{ inputs.mode }}
+          REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          case "$MODE" in
+            pr) ;;
+            main)
+              if [ "$REF" != refs/heads/main ] || [ "$EVENT" != push ]; then
+                echo "::error::main mode runs only on push to main"; exit 1
+              fi
+              ;;
+            *) echo "::error::mode must be pr or main, got '$MODE'"; exit 1 ;;
+          esac
+      - name: Check out the code to plan
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: src
+      - name: Check out main for the scripts and the stack map
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: main
+          path: trusted
+          sparse-checkout: |
+            /tools/
+            /platform/stacks.json
+          sparse-checkout-cone-mode: false
+      - name: Check stacks against main's stack map
+        env:
+          MODE: ${{ inputs.mode }}
+          STACKS: ${{ inputs.stacks }}
+          ACCOUNT: ${{ inputs.account }}
+        run: |
+          # main: every stack must be listed, CI-managed and in this account.
+          # pr: a stack new in this PR is not on main yet; plan-gate sends it to manual.
+          # Terminal stacks (ci: false) are never planned here.
+          map=trusted/platform/stacks.json
+          bad=0
+          for dir in $(jq -r '.[]' <<<"$STACKS"); do
+            if ! [[ "$dir" =~ ^(labs/[a-z0-9-]+/infra|platform/infra/[a-z0-9-]+)$ ]]; then
+              echo "::error::not a stack path: $dir"; bad=1; continue
+            fi
+            entry=$(jq -c --arg d "$dir" '[.stacks[] | select(.dir == $d)][0] // empty' "$map")
+            if [ -z "$entry" ]; then
+              [ "$MODE" = pr ] || { echo "::error::$dir is not listed in platform/stacks.json"; bad=1; }
+            elif [ "$(jq -r '.ci' <<<"$entry")" != true ]; then
+              echo "::error::$dir is terminal only (ci: false)"; bad=1
+            elif [ "$(jq -r '.account' <<<"$entry")" != "$ACCOUNT" ]; then
+              echo "::error::$dir is not in account $ACCOUNT"; bad=1
+            fi
+          done
+          exit "$bad"
+      - name: Install pinned tofu
+        run: sudo trusted/tools/cloud-setup.sh tofu
+      - name: Provider allowlist (before any provider code runs)
+        env:
+          STACKS: ${{ inputs.stacks }}
+        working-directory: src
+        run: |
+          # shellcheck disable=SC2046
+          python3 ../trusted/tools/provider-allowlist.py $(jq -r '.[]' <<<"$STACKS")
+      - name: Role and bucket from the account ID
+        id: target
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+          ACCOUNT: ${{ inputs.account }}
+          MODE: ${{ inputs.mode }}
+        run: trusted/tools/ci-target.sh "$ACCOUNT" "plan-$MODE"
+      - name: Show OIDC claims (the role's trust policy must match them)
+        run: python3 trusted/tools/oidc-claims.py
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ steps.target.outputs.role_arn }}
+          aws-region: ${{ steps.target.outputs.region }}
+          role-session-name: stator-plan-${{ inputs.mode }}-${{ github.run_id }}
+          retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
+          mask-aws-account-id: true # the repo is public
+      - name: tofu plan and plan-gate
+        id: plan
+        env:
+          MODE: ${{ inputs.mode }}
+          STACKS: ${{ inputs.stacks }}
+          BUCKET: ${{ steps.target.outputs.bucket }}
+          ACCOUNT_ID: ${{ steps.target.outputs.account_id }}
+          COMMENT: ${{ runner.temp }}/plan-comment.md
+          HEAD_SHA: ${{ inputs.head_sha }}
+          PLAN_PREFIX: plans/${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -uo pipefail
+          n=$(jq length <<<"$STACKS")
+          limit=$(( 60000 / (n > 0 ? n : 1) ))
+          failed=0
+          plans='{}'
+          lane=none
+          summary=""
+          eof="EOF_$(openssl rand -hex 16)"
+          if [ "$MODE" = pr ]; then
+            # Read-only plan: the PR role cannot write the lock, and a PR must never block main.
+            lock=(-lock=false)
+            next="After merge, main plans every stack again. Manual changes wait for approval in \`aws-apply\`."
+          else
+            lock=(-lock-timeout=5m)
+            next="Saved for apply. Manual changes wait for approval in \`aws-apply\`; auto changes apply now."
+          fi
+          # The backticks are Markdown code spans, not shell expansion.
+          # shellcheck disable=SC2016
+          printf '## Infrastructure plan\n\nCommit `%s`. %s\n' "$HEAD_SHA" "$next" >"$COMMENT"
+          for dir in $(jq -r '.[]' <<<"$STACKS"); do
+            out="$RUNNER_TEMP/plan.txt"
+            plan_bin="$RUNNER_TEMP/tfplan"
+            plan_json="$RUNNER_TEMP/plan.json"
+            rm -f "$plan_bin" "$plan_json"
+            {
+              tofu -chdir="src/$dir" init -no-color -lockfile=readonly -backend-config="bucket=$BUCKET" \
+                && tofu -chdir="src/$dir" plan -no-color "${lock[@]}" -detailed-exitcode -out="$plan_bin"
+            } >"$out" 2>&1
+            rc=$?
+            gate_line=""
+            if [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+              result=$(grep -E '^(Plan:|No changes\.)' "$out" | tail -1)
+              if tofu -chdir="src/$dir" show -json "$plan_bin" >"$plan_json" 2>>"$out"; then
+                gate_json=$(python3 trusted/tools/plan-gate.py "$dir" "$plan_json" --json 2>>"$out")
+                gate_rc=$?
+                python3 trusted/tools/plan-gate.py "$dir" "$plan_json" >>"$out" 2>&1
+                stack_lane=$(jq -r '.lane // "deny"' <<<"$gate_json" 2>/dev/null || echo deny)
+                gate_line="lane: $stack_lane"
+                if [ "$gate_rc" -ne 0 ] || [ "$stack_lane" = deny ]; then
+                  failed=1
+                  result="❌ blocked by plan-gate"
+                elif [ "$MODE" = main ] && [ "$rc" -eq 2 ]; then
+                  key="$PLAN_PREFIX/${dir//\//__}.tfplan"
+                  sha=$(sha256sum "$plan_bin" | cut -d' ' -f1)
+                  if aws s3 cp --only-show-errors "$plan_bin" "s3://$BUCKET/$key" 2>>"$out"; then
+                    plans=$(jq -c --arg d "$dir" --arg s "$sha" '.[$d] = $s' <<<"$plans")
+                    result="$result (saved, sha256 \`${sha:0:12}\`)"
+                    case "$stack_lane" in
+                      manual) lane=manual ;;
+                      auto) [ "$lane" = manual ] || lane=auto ;;
+                    esac
+                  else
+                    failed=1
+                    result="❌ failed to save the plan file"
+                  fi
+                fi
+              else
+                failed=1
+                result="❌ failed to export plan JSON"
+              fi
+            else
+              failed=1
+              result="❌ failed (exit $rc)"
+            fi
+            # Plan text is data: stop it from being read as workflow commands.
+            token=$(openssl rand -hex 16)
+            echo "::stop-commands::$token"; cat "$out"; echo "::$token::"
+            # shellcheck disable=SC2016
+            summary+=$(printf -- '- `%s`: %s%s' "$dir" "$result" "${gate_line:+, $gate_line}")$'\n'
+            {
+              # shellcheck disable=SC2016
+              printf '\n### `%s`\n%s\n' "$dir" "$result"
+              # shellcheck disable=SC2016
+              [ -z "$gate_line" ] || printf '`%s`\n' "$gate_line"
+              printf '\n<details><summary>Show output</summary>\n\n```\n'
+              tail -c "$limit" "$out"
+              printf '\n```\n</details>\n'
+            } >>"$COMMENT"
+          done
+          body=$(cat "$COMMENT")
+          printf '%s\n' "${body//"$ACCOUNT_ID"/(redacted)}" >"$COMMENT"
+          summary=${summary//"$ACCOUNT_ID"/(redacted)}
+          # main: the approver reads the plans here, in the run summary, before approving.
+          [ "$MODE" = main ] && cat "$COMMENT" >>"$GITHUB_STEP_SUMMARY"
+          {
+            echo "plans=$plans"
+            echo "lane=$lane"
+            echo "failed=$failed"
+            echo "summary<<$eof"
+            printf '%s' "$summary"
+            echo "$eof"
+          } >>"$GITHUB_OUTPUT"
+      - name: Post or update the plan comment
+        if: ${{ !cancelled() && steps.plan.outcome != 'skipped' && inputs.mode == 'pr' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          COMMENT: ${{ runner.temp }}/plan-comment.md
+          PR_NUMBER: ${{ inputs.pr_number }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- runway-infrastructure-plan -->';
+            const body = `${marker}\n${fs.readFileSync(process.env.COMMENT, 'utf8')}`;
+            const { owner, repo } = context.repo;
+            const issue_number = Number(process.env.PR_NUMBER);
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const mine = comments.find(c => c.user?.type === 'Bot' && c.body?.startsWith(marker));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+      - name: Fail if a plan failed
+        if: steps.plan.outputs.failed == '1'
+        run: exit 1

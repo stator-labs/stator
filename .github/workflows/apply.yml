@@ -1,0 +1,156 @@
+name: Apply
+
+# Reusable apply workflow (IaC platform v2). stator-ci-apply trusts only this file on main
+# (job_workflow_ref) and only the environments aws-apply and aws-apply-auto.
+# A calling job cannot set `environment`, so it is an input here. The caller cannot choose
+# its own lane: after approval this job re-runs plan-gate on the downloaded plan and refuses
+# aws-apply-auto unless every plan is lane auto. Steps, all after approval:
+#   1. Superseded: if this run's commit is no longer main's HEAD, exit green.
+#   2. Download each plan from plans/<run_id>-<plan_attempt>/ and check its SHA-256.
+#   3. tofu init with the lock file, plan-gate on `tofu show -json`, tofu apply <planfile>.
+# OpenTofu itself refuses a saved plan whose state changed since it was made ("stale").
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "aws-apply (manual lane) or aws-apply-auto (auto lane)"
+        required: true
+        type: string
+      plans:
+        description: 'JSON object {stack dir: plan file SHA-256} from plan.yml'
+        required: true
+        type: string
+      plan_attempt:
+        description: Run attempt that saved the plans (plan.yml output `attempt`)
+        required: true
+        type: string
+      account:
+        description: Account name from platform/stacks.json; selects AWS_<ACCOUNT>_ACCOUNT_ID
+        required: false
+        type: string
+        default: labs
+    outputs:
+      result:
+        description: "applied, superseded, or empty if the job failed"
+        value: ${{ jobs.apply.outputs.result }}
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: "Apply: run"
+    # Any branch can call this file. The environments allow main only; this check says so too.
+    if: >-
+      github.ref == 'refs/heads/main'
+      && github.event_name == 'push'
+      && (inputs.environment == 'aws-apply' || inputs.environment == 'aws-apply-auto')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write # OIDC -> stator-ci-apply
+    outputs:
+      result: ${{ steps.head.outputs.current == 'false' && 'superseded' || steps.apply.outputs.result }}
+    steps:
+      - name: Superseded? (this commit must still be main's HEAD)
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$head" = "$GITHUB_SHA" ]; then
+            echo "current=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "current=false" >>"$GITHUB_OUTPUT"
+            echo "::notice::Superseded: main is now ${head:0:12}. Its own run plans and applies every stack, so this run applies nothing."
+          fi
+      - name: Check out main at this run's commit
+        if: steps.head.outputs.current == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the plans input against the stack map
+        if: steps.head.outputs.current == 'true'
+        env:
+          PLANS: ${{ inputs.plans }}
+          ATTEMPT: ${{ inputs.plan_attempt }}
+          ACCOUNT: ${{ inputs.account }}
+        run: |
+          [[ "$ATTEMPT" =~ ^[1-9][0-9]*$ ]] || { echo "::error::plan_attempt must be a run attempt number"; exit 1; }
+          jq -e 'type == "object" and length > 0' <<<"$PLANS" >/dev/null || { echo "::error::plans must be a non-empty JSON object"; exit 1; }
+          bad=0
+          for dir in $(jq -r 'keys[]' <<<"$PLANS"); do
+            sha=$(jq -r --arg d "$dir" '.[$d]' <<<"$PLANS")
+            [[ "$sha" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::$dir: not a SHA-256"; bad=1; }
+            jq -e --arg d "$dir" --arg a "$ACCOUNT" \
+              'any(.stacks[]; .dir == $d and .ci == true and .account == $a)' platform/stacks.json >/dev/null \
+              || { echo "::error::$dir is not a CI stack in account $ACCOUNT"; bad=1; }
+          done
+          exit "$bad"
+      - name: Install pinned tofu (the same version plan.yml used)
+        if: steps.head.outputs.current == 'true'
+        run: sudo tools/cloud-setup.sh tofu
+      - name: Role and bucket from the account ID
+        if: steps.head.outputs.current == 'true'
+        id: target
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+          ACCOUNT: ${{ inputs.account }}
+        run: tools/ci-target.sh "$ACCOUNT" apply
+      - id: aws
+        if: steps.head.outputs.current == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ steps.target.outputs.role_arn }}
+          aws-region: ${{ steps.target.outputs.region }}
+          role-session-name: stator-apply-${{ github.run_id }}
+          retry-max-attempts: 3
+          mask-aws-account-id: true
+      - name: Show OIDC claims (the role's trust policy must match them)
+        if: failure() && steps.aws.outcome == 'failure'
+        run: python3 tools/oidc-claims.py
+      - name: Verify, gate and apply the saved plans
+        if: steps.head.outputs.current == 'true'
+        id: apply
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          PLANS: ${{ inputs.plans }}
+          BUCKET: ${{ steps.target.outputs.bucket }}
+          PLAN_PREFIX: plans/${{ github.run_id }}-${{ inputs.plan_attempt }}
+        run: |
+          set -euo pipefail
+          dirs=$(jq -r 'keys[]' <<<"$PLANS")
+          # Verify and gate every plan before applying any, so a refusal changes nothing.
+          for dir in $dirs; do
+            echo "::group::verify $dir"
+            want=$(jq -r --arg d "$dir" '.[$d]' <<<"$PLANS")
+            aws s3 cp --only-show-errors "s3://$BUCKET/$PLAN_PREFIX/${dir//\//__}.tfplan" "$dir/tfplan"
+            got=$(sha256sum "$dir/tfplan" | cut -d' ' -f1)
+            if [ "$got" != "$want" ]; then
+              echo "::error::$dir: saved plan SHA-256 $got does not match the planned $want"
+              exit 1
+            fi
+            tofu -chdir="$dir" init -no-color -lockfile=readonly -backend-config="bucket=$BUCKET"
+            tofu -chdir="$dir" show -json tfplan >"$RUNNER_TEMP/plan.json"
+            lane=$(python3 tools/plan-gate.py "$dir" "$RUNNER_TEMP/plan.json" --json | jq -r .lane) || lane=deny
+            python3 tools/plan-gate.py "$dir" "$RUNNER_TEMP/plan.json" || true
+            case "$ENVIRONMENT:$lane" in
+              *:deny) echo "::error::$dir: plan-gate denies this plan"; exit 1 ;;
+              aws-apply-auto:auto | aws-apply:auto | aws-apply:manual) ;;
+              *) echo "::error::$dir: lane $lane cannot apply in $ENVIRONMENT"; exit 1 ;;
+            esac
+            echo "::endgroup::"
+          done
+          for dir in $dirs; do
+            echo "::group::apply $dir"
+            if ! tofu -chdir="$dir" apply -no-color -lock-timeout=15m tfplan 2>&1 | tee "$RUNNER_TEMP/apply.txt"; then
+              if grep -q 'Saved plan is stale' "$RUNNER_TEMP/apply.txt"; then
+                echo "::error::$dir: the state changed after this plan was made, so OpenTofu refused it. Nothing is wrong with the code: re-run all jobs of the newest Infrastructure run to plan again."
+              fi
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+          echo "result=applied" >>"$GITHUB_OUTPUT"

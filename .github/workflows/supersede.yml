@@ -1,0 +1,49 @@
+name: Supersede
+
+# On every push to main, cancels Infrastructure runs still waiting for approval on an older
+# commit. Each main run plans every stack, so only the newest run matters. Runs outside the
+# Infrastructure concurrency group, so it starts even while a waiting run holds that group.
+# It cancels and never rejects: GITHUB_TOKEN is not an environment reviewer. If it fails, an
+# older run that is approved anyway still exits "superseded" in apply.yml.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  cancel:
+    name: "Supersede: cancel stale waiting runs"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write # cancel workflow runs
+      issues: write # the "apply waiting" issue
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tools
+      - name: Cancel waiting runs on older commits
+        id: cancel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ids=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/infrastructure.yml/runs?branch=main&status=waiting&per_page=100" \
+            --jq ".workflow_runs[] | select(.head_sha != \"$GITHUB_SHA\") | .id")
+          n=0
+          for id in $ids; do
+            echo "Cancelling waiting run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$id"
+            gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$id/cancel" >/dev/null
+            n=$((n + 1))
+          done
+          echo "Cancelled $n waiting run(s)."
+          echo "cancelled=$n" >>"$GITHUB_OUTPUT"
+      - name: Point the "apply waiting" issue at the newer push
+        if: steps.cancel.outputs.cancelled != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: tools/apply-alert.sh superseded
