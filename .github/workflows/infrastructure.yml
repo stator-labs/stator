@@ -86,12 +86,20 @@ jobs:
           python3 tools/provider-allowlist.py --self-test
           python3 .agents/hooks/guardrails.py --self-test
       - name: tofu test (mocked providers, no AWS access)
-        # Runs every stack that has a tests/ folder. No credentials: providers are mocked.
+        # Runs every stack and module that has a tests/ folder. No credentials: providers are mocked.
         run: |
           for dir in $(python3 tools/tofu-stacks.py all | jq -r '.[]'); do
             [ -d "$dir/tests" ] || continue
             echo "::group::$dir"
             tofu -chdir="$dir" init -backend=false -lockfile=readonly
+            tofu -chdir="$dir" test
+            echo "::endgroup::"
+          done
+          # Modules carry no lockfile (the calling stack pins providers), so init them unlocked.
+          for dir in platform/infra/modules/*/; do
+            [ -d "$dir/tests" ] || continue
+            echo "::group::$dir"
+            tofu -chdir="$dir" init -backend=false
             tofu -chdir="$dir" test
             echo "::endgroup::"
           done
