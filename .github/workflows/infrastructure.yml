@@ -1,36 +1,33 @@
 name: Infrastructure
 
-# PR: fmt, validate, tflint, checkov, then `tofu plan` per changed stack (plan role),
-#     posted as one PR comment that is updated in place.
-# main: `tofu apply` per changed stack in environment aws-apply (apply role, needs approval).
-# The bootstrap stack is never planned or applied here: only `make bootstrap` touches it.
+# Pipeline v2 (IaC platform v2, task 8). Roles come from AWS_LABS_ACCOUNT_ID (tools/ci-target.sh).
+# PR:   fmt, validate, tflint, checkov, then plan.yml (pr mode) per changed stack, posted as one
+#       PR comment. PR plans run without the state lock.
+# main: plan.yml (main mode) plans every CI stack and saves each plan with its SHA-256.
+#       apply.yml then applies exactly those files: lane auto in aws-apply-auto right away,
+#       lane manual in aws-apply after you approve. The rolling "Infrastructure: apply waiting"
+#       issue links the one run to approve. Supersede cancels older waiting runs.
+#       The report job keeps "Infrastructure: main is failing" open until a run passes.
+# Terminal-only stacks (platform/stacks.json, ci: false) are never planned or applied here.
 
 on:
   pull_request:
     branches: [main]
-    # No paths filter here: "Infrastructure: required checks" is a required check and must report on every PR.
-    # `detect-stacks` decides what to plan. The push trigger keeps its filter.
+    # No paths filter: "Infrastructure: required checks" is a required check and must report
+    # on every PR. `detect-stacks` decides what to plan.
   merge_group:
     types: [checks_requested]
   push:
     branches: [main]
-    paths:
-      - "platform/infra/**"
-      - "labs/*/infra/**"
-      - ".github/workflows/infrastructure.yml"
-      - "tools/tofu-stacks.py"
-      - "platform/stacks.json"
-      - "tools/checkov/**"
-      - ".tflint.hcl"
+    # No paths filter either: main plans every stack, so a tool or tofu bump replans too.
 
 permissions:
   contents: read
 
-# PRs: a new push cancels the old plan. main: no concurrency group, because GitHub
-# drops queued runs beyond one and a dropped run would skip an apply. The S3
-# lockfile (-lock-timeout) serializes applies instead.
+# PRs: a new push cancels the old plan. main: one run at a time with GitHub's default queue,
+# which keeps only the newest pending run. That is safe because each main run plans every stack.
 concurrency:
-  group: infrastructure-${{ github.event.pull_request.number || github.run_id }}
+  group: infrastructure-${{ github.event.pull_request.number || (github.event_name == 'push' && 'main') || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -51,11 +48,18 @@ jobs:
           fetch-depth: 0
       - id: stacks
         env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
-          HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
         run: |
-          stacks=$(python3 tools/tofu-stacks.py changed "$BASE" "$HEAD")
-          echo "changed stacks: $stacks"
+          if [ "$EVENT" = push ]; then
+            # main plans every CI stack: a cancelled run can never drop one, and a no-change
+            # plan doubles as a drift check.
+            stacks=$(python3 tools/tofu-stacks.py ci)
+          else
+            stacks=$(python3 tools/tofu-stacks.py changed "$BASE" "$HEAD")
+          fi
+          echo "stacks: $stacks"
           echo "stacks=$stacks" >> "$GITHUB_OUTPUT"
 
   validate:
@@ -118,10 +122,12 @@ jobs:
       && needs.detect-stacks.outputs.stacks != '[]'
     permissions:
       contents: read
-      id-token: write # OIDC -> stator-plan
+      id-token: write # OIDC -> stator-ci-plan-pr
       pull-requests: write # the plan comment
-    uses: stator-labs/stator/.github/workflows/tofu-plan.yml@main # zizmor: ignore[unpinned-uses] AWS OIDC job_workflow_ref requires @refs/heads/main
+    uses: stator-labs/stator/.github/workflows/plan.yml@main # zizmor: ignore[unpinned-uses] AWS OIDC job_workflow_ref requires @refs/heads/main
+    # No secrets: PR plans run the PR's own code, which can read anything passed in.
     with:
+      mode: pr
       stacks: ${{ needs.detect-stacks.outputs.stacks }}
       head_sha: ${{ github.event.pull_request.head.sha }}
       pr_number: ${{ github.event.pull_request.number }}
@@ -158,49 +164,94 @@ jobs:
             [ "$PLAN" = success ] || { echo "::error::stacks changed but Infrastructure: plan result is $PLAN (fork PRs are not planned; a maintainer must push the branch to this repo)"; exit 1; }
           fi
 
-  apply:
-    name: "Infrastructure: apply"
+  plan-main:
+    name: "Infrastructure: plan main"
     needs: [detect-stacks, validate]
-    # Paused (IaC platform v2, task 1): this job asks for approval before it plans, so the
-    # approver never sees the plan and a stale run applies old code. Pipeline v2 (task 8) replaces it.
-    if: vars.LEGACY_APPLY_ENABLED == 'true' # unset: never runs (actionlint rejects a constant false)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    environment: aws-apply # required reviewer; deployments from main only
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-stacks.outputs.stacks != '[]'
     permissions:
       contents: read
-      id-token: write # OIDC -> runway-apply
+      id-token: write # OIDC -> stator-ci-plan-main
+      pull-requests: write # declared by plan.yml; unused in main mode
+    uses: stator-labs/stator/.github/workflows/plan.yml@main # zizmor: ignore[unpinned-uses] AWS OIDC job_workflow_ref requires @refs/heads/main
+    with:
+      mode: main
+      stacks: ${{ needs.detect-stacks.outputs.stacks }}
+      head_sha: ${{ github.sha }}
+
+  notify:
+    name: "Infrastructure: notify"
+    # Runs next to apply: while apply waits for approval, this issue links the run.
+    needs: [plan-main]
+    if: needs.plan-main.outputs.lane == 'manual'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # the "apply waiting" issue
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install pinned tofu
-        run: sudo tools/cloud-setup.sh tofu
-      - id: aws
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+          sparse-checkout: tools
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          SUMMARY: ${{ needs.plan-main.outputs.summary }}
+          ASSIGNEE: yaaf-some
+        run: tools/apply-alert.sh waiting aws-apply
+
+  apply:
+    name: "Infrastructure: apply"
+    needs: [plan-main]
+    if: needs.plan-main.outputs.lane == 'auto' || needs.plan-main.outputs.lane == 'manual'
+    permissions:
+      contents: read
+      id-token: write # OIDC -> stator-ci-apply
+    uses: stator-labs/stator/.github/workflows/apply.yml@main # zizmor: ignore[unpinned-uses] AWS OIDC job_workflow_ref requires @refs/heads/main
+    with:
+      environment: ${{ needs.plan-main.outputs.lane == 'manual' && 'aws-apply' || 'aws-apply-auto' }}
+      plans: ${{ needs.plan-main.outputs.plans }}
+      plan_attempt: ${{ needs.plan-main.outputs.attempt }}
+
+  report:
+    name: "Infrastructure: report"
+    # Always runs on main, also when nothing changed, so the issues close after a clean run.
+    needs: [detect-stacks, validate, plan-main, apply]
+    if: always() && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # the two rolling issues
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          role-session-name: stator-apply-${{ github.run_id }}
-          retry-max-attempts: 3
-          mask-aws-account-id: true
-      - name: Show OIDC claims (the role's trust policy must match them)
-        if: failure() && steps.aws.outcome == 'failure'
-        run: python3 tools/oidc-claims.py
-      - name: tofu apply
-        env:
-          STACKS: ${{ needs.detect-stacks.outputs.stacks }}
-          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
-          AWS_ACCOUNT_ID: ${{ steps.aws.outputs.aws-account-id }}
+          persist-credentials: false
+          sparse-checkout: tools
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          ASSIGNEE: yaaf-some
+          DETECT: ${{ needs.detect-stacks.result }}
+          VALIDATE: ${{ needs.validate.result }}
+          PLAN: ${{ needs.plan-main.result }}
+          APPLY: ${{ needs.apply.result }}
+          APPLIED: ${{ needs.apply.outputs.result }}
         run: |
-          set -euo pipefail
-          echo "::add-mask::$AWS_ACCOUNT_ID"
-          for dir in $(jq -r '.[]' <<<"$STACKS"); do
-            echo "::group::$dir"
-            tofu -chdir="$dir" init -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
-            tofu -chdir="$dir" plan -lock-timeout=15m -out=tfplan
-            tofu -chdir="$dir" show -json tfplan > "$RUNNER_TEMP/plan.json"
-            python3 tools/plan-gate.py "$dir" "$RUNNER_TEMP/plan.json"
-            tofu -chdir="$dir" apply -lock-timeout=15m tfplan
-            echo "::endgroup::"
+          echo "detect=$DETECT validate=$VALIDATE plan=$PLAN apply=$APPLY ($APPLIED)"
+          # Cancelled: Supersede or a newer push took over; that run owns both issues.
+          for r in "$DETECT" "$VALIDATE" "$PLAN" "$APPLY"; do
+            [ "$r" != cancelled ] || { echo "cancelled: the newer run reports"; exit 0; }
           done
+          if [ "$APPLIED" = superseded ]; then
+            echo "superseded: the newer run reports"; exit 0
+          fi
+          tools/apply-alert.sh idle
+          failed=""
+          [ "$DETECT" != failure ] || failed="Detect stacks"
+          [ "$VALIDATE" != failure ] || failed="Validate"
+          [ "$PLAN" != failure ] || failed="The main plan"
+          [ "$APPLY" != failure ] || failed="The apply"
+          if [ -n "$failed" ]; then
+            tools/apply-alert.sh failing "$failed"
+          else
+            tools/apply-alert.sh healthy
+          fi

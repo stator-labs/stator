@@ -1,6 +1,6 @@
 # platform/infra
 
-OpenTofu stacks. GitHub Actions plans every PR and applies on `main` ([infrastructure.yml](../../.github/workflows/infrastructure.yml)). Only `bootstrap/` and `foundation/` run from Yaaf's terminal.
+OpenTofu stacks. GitHub Actions plans every PR, then plans every CI stack on `main` and applies exactly that saved plan ([infrastructure.yml](../../.github/workflows/infrastructure.yml), [plan.yml](../../.github/workflows/plan.yml), [apply.yml](../../.github/workflows/apply.yml)). Small safe plans apply in `aws-apply-auto`; the rest wait for Yaaf in `aws-apply`, linked from the "Infrastructure: apply waiting" issue. Terminal-only stacks (`ci: false` in [stacks.json](../stacks.json)) run from Yaaf's terminal.
 
 ```mermaid
 flowchart LR
@@ -9,18 +9,20 @@ flowchart LR
     fnd["foundation/<br/>Org, SCPs, Trail, Budgets, $30 kill switch"]
   end
   subgraph ci["GitHub Actions (OIDC, no static keys)"]
-    pr["PR -> plan role (read-only)"]
-    apply["main + aws-apply -> apply role (bounded)"]
+    pr["PR -> stator-ci-plan-pr (read-only)"]
+    main["main -> stator-ci-plan-main<br/>saves plan + SHA-256"]
+    apply["aws-apply-auto, or aws-apply after approval<br/>-> stator-ci-apply (bounded)"]
   end
   fnd -->|governs| labs["labs/*/infra/ (EKS, Lambda, agents)"]
   pr --> labs
+  main --> apply
   apply --> labs
 ```
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`.
 - **`bootstrap/`** (terminal-only, management): the management state bucket only. No OIDC provider and no CI role: SCPs do not apply to the management account, so nothing there is CI-reachable.
-- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-boundary`, and the CI roles. Legacy roles under `/stator/`: `stator-plan` (PRs, pinned to `tofu-plan.yml`), `stator-apply`, `stator-reaper`. IaC platform v2 roles from [`modules/ci-roles`](modules/ci-roles/README.md) under `/stator/platform/`: `stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper`, unused until pipeline v2. Run with `AWS_PROFILE=stator-labs make bootstrap`, then `make cutover`.
+- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-boundary`, and the CI roles. Legacy roles under `/stator/`: `stator-plan` (PRs, pinned to `tofu-plan.yml`), `stator-apply`, `stator-reaper`. IaC platform v2 roles from [`modules/ci-roles`](modules/ci-roles/README.md) under `/stator/platform/`: `stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper`, used by pipeline v2. The legacy roles go in task 9. Run with `AWS_PROFILE=stator-labs make bootstrap`, then `make cutover`.
 - **`foundation/`** (terminal-only): AWS Organization, `runway-labs` account in `stator-labs` OU, guardrail SCP, centralized root access, 90-day org CloudTrail, IAM Access Analyzer, root sign-in alert, Identity Center, budgets ($5/$15/$30), anomaly monitor and the $30 labs kill-switch SCP (`kill-switch.tf`). Personal values live in git-ignored `foundation.auto.tfvars`.
 - **`modules/`**: shared modules. Changing them plans every stack.
 
@@ -58,7 +60,7 @@ flowchart LR
    }
    ```
 3. Lock providers: `tofu init -backend=false && tofu providers lock -platform=linux_amd64 -platform=darwin_arm64`.
-4. Open a PR for the plan comment; merge and approve `aws-apply`.
+4. Open a PR for the plan comment and merge. Auto-lane changes apply on their own; manual-lane changes wait: open the "Infrastructure: apply waiting" issue and follow its three steps.
 
 To delete a stack: merge a PR emptying its `.tf` resources first, then a PR deleting the folder.
 
