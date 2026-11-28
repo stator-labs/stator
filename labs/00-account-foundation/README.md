@@ -45,7 +45,7 @@ flowchart LR
 ```
 
 - ✅ **AWS Organization & guardrails (`STAT-33`):** `runway-labs` account in `stator-labs` OU, guardrail SCP (2 regions, no commitments, instance allow-list, no org exit, no IAM role manager), 90-day org CloudTrail, IAM Access Analyzer, root sign-in email ([platform/infra/foundation](../../platform/infra/foundation/)).
-- ✅ **Human SSO (`STAT-33`):** IAM Identity Center (`yaaf` + passkey, 1-hour `stator-admin` sessions; `runway-admin` kept until task 13 drops it). CLI sign-in goes through AWS Credential Daemon v0.2.0, so no session token sits on disk. Legacy IAM user `yaaf-admin` deleted 2026-11-20, recreated and deleted again 2026-11-28 (see What broke).
+- ✅ **Human SSO (`STAT-33`):** IAM Identity Center (`yaaf` + passkey, 1-hour `stator-admin` sessions; `runway-admin` removed 2026-11-28). CLI sign-in goes through AWS Credential Daemon v0.2.0, so no session token sits on disk. Legacy IAM user `yaaf-admin` deleted 2026-11-20, recreated and deleted again 2026-11-28 (see What broke).
 - ✅ **Budgets, anomaly monitor & $30 kill switch (`STAT-9`, `STAT-36`):** monthly budgets at $5 / $15 / $30 (forecast on $30), daily $1 anomaly email, and automatic $30 labs kill-switch SCP in `foundation/`.
 - ✅ **OpenTofu OIDC pipeline (`STAT-11`):** remote S3 state with native lockfile, SHA-pinned CI workflows, Checkov tag gate (`CKV_RUNWAY_1`), plan comments on PRs and `aws-apply` approval on `main`.
 - 🔨 **Account hardening in labs (`STAT-54`):** free account defaults in both allowed regions: S3 account Block Public Access, EBS encryption by default, IMDSv2 required, no public EBS snapshots, AMIs or SSM documents ([hardening.tf](infra/hardening.tf)). Waiting on the first `aws-apply`.

@@ -30,10 +30,10 @@ resource "aws_identitystore_user" "yaaf" {
   }
 }
 
-# Permission sets cannot be renamed, so a rename adds the new name, you sign in with it, and a
-# second change drops the old one. Remove "runway-admin" once `sso_role_name` uses stator-admin.
+# Permission sets cannot be renamed. To rename one, add the new name to this set, sign in with it,
+# then remove the old name in a second change (how runway-admin became stator-admin, 2026-11-28).
 locals {
-  admin_permission_sets = toset(["runway-admin", "stator-admin"])
+  admin_permission_sets = toset(["stator-admin"])
   admin_accounts = {
     management = local.account_id
     labs       = aws_organizations_account.labs.id
@@ -73,25 +73,4 @@ resource "aws_ssoadmin_account_assignment" "admin" {
   target_id          = each.value.account
 
   depends_on = [aws_ssoadmin_managed_policy_attachment.admin]
-}
-
-# Keep the live runway-admin resources instead of replacing them.
-moved {
-  from = aws_ssoadmin_permission_set.admin
-  to   = aws_ssoadmin_permission_set.admin["runway-admin"]
-}
-
-moved {
-  from = aws_ssoadmin_managed_policy_attachment.admin
-  to   = aws_ssoadmin_managed_policy_attachment.admin["runway-admin"]
-}
-
-moved {
-  from = aws_ssoadmin_account_assignment.admin["management"]
-  to   = aws_ssoadmin_account_assignment.admin["runway-admin/management"]
-}
-
-moved {
-  from = aws_ssoadmin_account_assignment.admin["labs"]
-  to   = aws_ssoadmin_account_assignment.admin["runway-admin/labs"]
 }
