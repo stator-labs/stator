@@ -68,7 +68,7 @@ To delete a stack: merge a PR emptying its `.tf` resources first, then a PR dele
 1. Enable IAM Identity Center (org instance) in `us-east-1` via Console.
 2. Check `aws organizations list-aws-service-access-for-organization`; ensure every listed service is in `service_access_principals`.
 3. Turn off IAM role manager in management: `aws iam put-account-properties --properties RoleManager/Enabled=false`.
-4. Build `foundation.auto.tfvars` (`make tfvars` reads live AWS values after `aws sso login --profile stator`; `FORCE=1 make tfvars` overwrites).
+4. `make plan` and `make apply` build `foundation.auto.tfvars` from live AWS values when it is missing. `FORCE=1 make tfvars` rebuilds it.
 5. Run `make plan` (expect additions only, no destroys) then `make apply`. Confirm the SNS email and delete any legacy IAM admin user.
 
 ### Verify the budget kill switch (applied 2026-11-21)
