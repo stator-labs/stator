@@ -43,7 +43,7 @@ Write short sentences in active voice with zero filler and zero em dashes across
 
 ## 3. Zero static credentials or hardcoded IDs
 
-Never commit AWS account IDs, static IAM keys, or personal emails to Git. [identifier-check.py](../tools/identifier-check.py) checks every PR. Keep personal values in git-ignored `foundation.auto.tfvars` and pass `-backend-config=bucket=$TF_STATE_BUCKET` in CI. GitHub Actions authenticates via OIDC; local terminal sessions use IAM Identity Center (`aws sso login --profile stator`).
+Never commit AWS account IDs, static IAM keys, or personal emails to Git. [identifier-check.py](../tools/identifier-check.py) checks every PR. Keep personal values in git-ignored `foundation.auto.tfvars` and derive the bucket name from `AWS_LABS_ACCOUNT_ID` in CI. GitHub Actions authenticates via OIDC; local terminal sessions use IAM Identity Center (`aws sso login --profile stator`).
 
 ## 4. Blast-radius and `$0` idle protection
 

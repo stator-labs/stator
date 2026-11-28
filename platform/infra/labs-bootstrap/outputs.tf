@@ -2,18 +2,6 @@ output "state_bucket" {
   value = aws_s3_bucket.state.bucket
 }
 
-output "plan_role_arn" {
-  value = aws_iam_role.plan.arn
-}
-
-output "apply_role_arn" {
-  value = aws_iam_role.apply.arn
-}
-
-output "reaper_role_arn" {
-  value = aws_iam_role.reaper.arn
-}
-
 output "boundary_arn" {
   value = aws_iam_policy.boundary.arn
 }
@@ -27,6 +15,6 @@ output "region" {
 }
 
 output "ci_role_arns" {
-  description = "IaC platform v2 roles (module ci-roles), side by side with the legacy roles until pipeline v2."
+  description = "The CI roles (module ci-roles), by preset."
   value       = module.ci.role_arns
 }

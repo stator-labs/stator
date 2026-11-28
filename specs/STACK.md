@@ -21,7 +21,7 @@ Verified free-tier services and operational limits as of November 2026. Probe an
 
 - **Limits:** Free minutes on public repositories using standard GitHub-hosted runners.
 - **Role:** Runs OIDC-authenticated OpenTofu plans on PRs, saved-plan applies on `main`, nightly resource checks (`reaper.yml`), and deterministic data collectors.
-- **Guardrails:** Pin every action by full 40-character commit SHA and bump via [dependabot.yml](../.github/dependabot.yml) with a 7-day cooldown. Default workflow `permissions` to `read-all` or `{}` and grant minimum permissions per job. Pass `-backend-config=bucket=$TF_STATE_BUCKET` from a repo variable so no account ID sits in Git. Plan jobs get no secrets, and their scripts run from `main`, not the PR.
+- **Guardrails:** Pin every action by full 40-character commit SHA and bump via [dependabot.yml](../.github/dependabot.yml) with a 7-day cooldown. Default workflow `permissions` to `read-all` or `{}` and grant minimum permissions per job. Derive the state bucket from the `AWS_LABS_ACCOUNT_ID` repo variable and pass it with `-backend-config` so no account ID sits in Git. Plan jobs get no secrets, and their scripts run from `main`, not the PR.
 
 ## 2. GitHub Agentic Workflows (`github/gh-aw`)
 
@@ -51,7 +51,7 @@ Verified free-tier services and operational limits as of November 2026. Probe an
 ## 6. AWS (`Management` + `Labs` accounts)
 
 - **Limits:** `$0` idle baseline. AWS grants the first `2` action-enabled budgets free, which covers Stator's `$5`, `$15`, and `$30` alerts plus the `$30` kill-switch SCP action.
-- **Role:** `Management` holds the AWS Organization, guardrail SCPs, 90-day org CloudTrail, IAM Access Analyzer, Identity Center, and budgets. `Labs` (`runway-labs` in `stator-labs` OU) runs CI (`stator-plan`, `stator-apply`, `stator-reaper`) and ephemeral lab stacks.
+- **Role:** `Management` holds the AWS Organization, guardrail SCPs, 90-day org CloudTrail, IAM Access Analyzer, Identity Center, and budgets. `Labs` (`runway-labs` in `stator-labs` OU) runs CI (`stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper`) and ephemeral lab stacks.
 - **Guardrails:** Use native IAM `job_workflow_ref` conditions and GitHub `sub` claim customization (no static IAM keys). Enforce `default_tags` (`project`, `lab`, `ephemeral` or `runway:ephemeral`) with Checkov and commit `.terraform.lock.hcl` for `linux_amd64` and `darwin_arm64`. See [platform/infra/README.md](../platform/infra/README.md).
 
 ## 7. Supabase (optional for app labs)

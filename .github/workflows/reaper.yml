@@ -1,7 +1,7 @@
 name: Reaper
 
 # Nightly dry run: lists resources tagged runway:ephemeral=true and deletes nothing.
-# The role runway-reaper trusts only runs on main (the schedule and manual runs). The AWS
+# stator-ci-reaper trusts only this file on main (the schedule and manual runs). The AWS
 # trust policy refuses pull requests and other branches, and the job also stops early on them.
 # GitHub pauses schedules in a public repo after 60 days without activity; the weekly
 # board-health task checks that this workflow still ran.
@@ -26,30 +26,21 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      id-token: write # OIDC -> runway-reaper
+      id-token: write # OIDC -> stator-ci-reaper
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - id: role
-        name: Name the reaper role
+      - name: Role from the account ID
+        id: target
         env:
-          REAPER_ROLE_ARN: ${{ vars.AWS_REAPER_ROLE_ARN }}
-          APPLY_ROLE_ARN: ${{ vars.AWS_APPLY_ROLE_ARN }}
-        run: |
-          if [ -n "$REAPER_ROLE_ARN" ]; then
-            arn="$REAPER_ROLE_ARN"
-          else
-            # Fallback before cutover: same account and path as legacy runway-apply.
-            arn="${APPLY_ROLE_ARN%runway-apply}runway-reaper"
-          fi
-          echo "::add-mask::$arn"
-          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: tools/ci-target.sh labs reaper
       - id: aws
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          role-to-assume: ${{ steps.role.outputs.arn }}
-          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ steps.target.outputs.role_arn }}
+          aws-region: ${{ steps.target.outputs.region }}
           role-session-name: stator-reaper-${{ github.run_id }}
           retry-max-attempts: 3 # a wrong trust policy will not fix itself; fail in seconds
           mask-aws-account-id: true # default is false; the repo is public

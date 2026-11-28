@@ -22,12 +22,12 @@ flowchart LR
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`.
 - **`bootstrap/`** (terminal-only, management): the management state bucket only. No OIDC provider and no CI role: SCPs do not apply to the management account, so nothing there is CI-reachable.
-- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-boundary`, and the CI roles. Legacy roles under `/stator/`: `stator-plan` (PRs, pinned to `tofu-plan.yml`), `stator-apply`, `stator-reaper`. IaC platform v2 roles from [`modules/ci-roles`](modules/ci-roles/README.md) under `/stator/platform/`: `stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper`, used by pipeline v2. The legacy roles go in task 9. Run with `AWS_PROFILE=stator-labs make bootstrap`, then `make cutover`.
+- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-boundary`, and the CI roles. The CI roles come from [`modules/ci-roles`](modules/ci-roles/README.md) under `/stator/platform/`: `stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper`. `make cutover` sets only `AWS_LABS_ACCOUNT_ID` and `AWS_REGION`. Run with `AWS_PROFILE=stator-labs make bootstrap`, then `make cutover`.
 - **`foundation/`** (terminal-only): AWS Organization, `runway-labs` account in `stator-labs` OU, guardrail SCP, centralized root access, 90-day org CloudTrail, IAM Access Analyzer, root sign-in alert, Identity Center, budgets ($5/$15/$30), anomaly monitor and the $30 labs kill-switch SCP (`kill-switch.tf`). Personal values live in git-ignored `foundation.auto.tfvars`.
 - **`modules/`**: shared modules. Changing them plans every stack.
 
 ## Stack rules
-- **State:** S3 backend, key `<state_key or id>/terraform.tfstate` from [`platform/stacks.json`](../stacks.json), `use_lockfile = true`. CI passes `-backend-config=bucket=$TF_STATE_BUCKET` so no account ID sits in git. Checked by `tools/tofu-stacks.py check`.
+- **State:** S3 backend, key `<state_key or id>/terraform.tfstate` from [`platform/stacks.json`](../stacks.json), `use_lockfile = true`. CI derives the bucket from `AWS_LABS_ACCOUNT_ID` (`tools/ci-target.sh`) and passes it with `-backend-config`, so no account ID sits in git. Checked by `tools/tofu-stacks.py check`.
 - **Tags:** every `provider "aws"` sets `default_tags` (`project`, `lab`, `runway:ephemeral`). Checked by Checkov `CKV_RUNWAY_1` ([tools/checkov](../../tools/checkov/)).
 - **IAM:** roles and policies live under `/runway/` (`/stator/` after Step B) and attach `permissions_boundary`.
 - **OIDC roles:** declare `variable "github_sub_prefix"` (no default). Only terminal-only stacks hold OIDC roles, so the bootstrap scripts pass it and CI never does.

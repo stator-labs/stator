@@ -20,36 +20,8 @@ variable "github_sub_prefix" {
   }
 }
 
-variable "apply_environment" {
-  description = "GitHub environment whose jobs may assume the labs apply role."
-  type        = string
-  default     = "aws-apply"
-}
-
-variable "plan_job_workflow_ref" {
-  description = "Exact reusable plan workflow ref on main allowed to assume stator-plan."
-  type        = string
-  default     = "stator-labs/stator/.github/workflows/tofu-plan.yml@refs/heads/main"
-
-  validation {
-    condition     = can(regex("^[^:*?\\s]+/\\.github/workflows/[^:*?\\s]+\\.ya?ml@refs/heads/main$", var.plan_job_workflow_ref))
-    error_message = "plan_job_workflow_ref must pin one workflow file under .github/workflows/ at @refs/heads/main with no wildcards."
-  }
-}
-
-variable "reaper_job_workflow_ref" {
-  description = "Exact reaper workflow ref on main allowed to assume stator-reaper."
-  type        = string
-  default     = "stator-labs/stator/.github/workflows/reaper.yml@refs/heads/main"
-
-  validation {
-    condition     = can(regex("^[^:*?\\s]+/\\.github/workflows/[^:*?\\s]+\\.ya?ml@refs/heads/main$", var.reaper_job_workflow_ref))
-    error_message = "reaper_job_workflow_ref must pin one workflow file under .github/workflows/ at @refs/heads/main with no wildcards."
-  }
-}
-
 variable "ci_workflow_refs" {
-  description = "Reusable workflows the IaC platform v2 roles trust, all on main."
+  description = "Reusable workflows the CI roles trust, all on main."
   type = object({
     plan   = string
     apply  = string
