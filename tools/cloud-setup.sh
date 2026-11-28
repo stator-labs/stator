@@ -20,7 +20,7 @@ GH=https://github.com
 
 # name|version|url|sha256|path inside archive ("-" = raw binary)
 TOOLS=(
-  "tofu|1.13.9|$GH/opentofu/opentofu/releases/download/v1.13.9/tofu_1.13.9_linux_amd64.tar.gz|b34b327cc1ef07178207b6f2cd1f5276537d3e5b7be316500f6dac50d4c0a857|tofu"
+  "tofu|1.13.10|$GH/opentofu/opentofu/releases/download/v1.13.10/tofu_1.13.10_linux_amd64.tar.gz|f606b6117ee03177374806d56d580bde7b512aff69f86d2b9f3148dced4ca375|tofu"
   "tflint|0.66.0|$GH/terraform-linters/tflint/releases/download/v0.66.0/tflint_linux_amd64.zip|22be11cadc25cd02401e94c0ccc91aa63467debb8485c2a755d98f4c0a9d1e2e|tflint"
   "kubectl|1.37.2|https://dl.k8s.io/release/v1.37.2/bin/linux/amd64/kubectl|c04487523e7aa7d1493f7808174c899db93d7a9cf57531420cd76b9bd415f8f4|-"
   "helm|4.3.2|https://get.helm.sh/helm-v4.3.2-linux-amd64.tar.gz|d1c0278d46beab79582d7e50f5b3dc206944ba8e577cde618513fd07daa53983|linux-amd64/helm"
