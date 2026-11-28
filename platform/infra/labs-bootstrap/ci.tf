@@ -1,5 +1,5 @@
-# IaC platform v2 CI roles (task 6). They sit next to the legacy stator-plan, stator-apply and
-# stator-reaper roles until pipeline v2 switches to them (task 8); task 9 deletes the legacy ones.
+# The CI roles (IaC platform v2): stator-ci-plan-pr, -plan-main, -apply and -reaper under
+# /stator/platform/, each trusting one reusable workflow on main.
 
 module "ci" {
   source = "../modules/ci-roles"
@@ -11,11 +11,4 @@ module "ci" {
   state_bucket_arn        = aws_s3_bucket.state.arn
   terminal_state_prefixes = ["labs-bootstrap"]
   boundary_arn            = aws_iam_policy.boundary.arn
-
-  protected_role_arns = [
-    aws_iam_role.plan.arn,
-    aws_iam_role.apply.arn,
-    aws_iam_role.reaper.arn,
-    aws_iam_policy.apply_iam.arn,
-  ]
 }
