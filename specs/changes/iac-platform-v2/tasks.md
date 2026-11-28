@@ -116,7 +116,28 @@ Tier legend: **T1** a PR Yaaf merges. **T2** Yaaf approves and, where stated, ap
 - **Verify:** a dispatch Drift run on clean `main` opens no issue.
 - **Done when:** merged and settings recorded.
 
-## 13. Docs, specs and cleanup
+## 13. Remove `runway` names
+Task 10 covers tags, the checkov ID and pipeline code. This task renames everything else to `stator-*`, cheapest first. Each AWS step plans first and keeps the old resource until the new one works.
+- **Context manifest:**
+  - `platform/infra/foundation/organization.tf`
+  - `platform/infra/foundation/identity-center.tf`
+  - `platform/infra/foundation/guardrails.tf`
+  - `platform/infra/foundation/kill-switch.tf`
+  - `platform/infra/foundation/budgets.tf`
+  - `platform/infra/foundation/trail.tf`
+  - `platform/infra/foundation/tests/foundation.tftest.hcl`
+  - `platform/infra/bootstrap/main.tf`
+  - `platform/infra/README.md`
+- **Change:**
+  1. Code only: docs, specs, the research report filename, the plan comment marker. Tier T1.
+  2. In place: SCP names and the `runway-labs` account name. Check first that the provider updates each one without replacing it. Tier T2.
+  3. Create, switch, delete: `runway-budget-kill-switch` role, budgets, anomaly monitor and root sign-in alert (`anomaly.tf`, `alerts.tf`), `runway-org-external-access` analyzer. Tier T2.
+  4. `runway-admin` permission set: create `stator-admin` next to it, sign in with it, point `sso_role_name` in `~/.aws/config` at it, then remove the old one. Never both gone at once. Tier T2.
+  5. Data moves: new `stator-tfstate-<management id>` bucket, `tofu init -migrate-state` for `bootstrap` and `foundation`, old bucket kept until both stacks plan clean. New trail and log bucket; the old log bucket stays until its 90-day retention ends, then goes. Tier T2.
+- **Verify:** `git grep -i runway -- . ':!specs/changes'` returns only dated "What broke" history; `aws iam list-roles --path-prefix /runway/` and `aws organizations list-policies --filter SERVICE_CONTROL_POLICY` show no `runway-*` names.
+- **Done when:** no `runway-*` resource remains in either account except the old trail log bucket, with its delete date recorded in the Lab 00 README.
+
+## 14. Docs, specs and cleanup
 - **Context manifest:**
   - `platform/infra/README.md`
   - `specs/STACK.md`
