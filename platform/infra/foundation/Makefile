@@ -2,14 +2,14 @@
 # his terminal with management-account admin credentials; CI only lints it. Steps: ../README.md, "Apply the foundation".
 #   make plan     read-only
 #   make apply    shows the plan and asks for "yes"
-#   make tfvars   writes foundation.auto.tfvars from what AWS holds now (see tfvars.sh)
-#   make import-budgets   one time: imports the budgets moved here from the Lab 00 stack (see import-budgets.sh)
+#   make tfvars   writes foundation.auto.tfvars from what AWS holds now (see tfvars.sh).
+#                 plan and apply run it themselves when the file is missing.
 
 AWS_PROFILE ?= stator
 export AWS_PROFILE
 
-.PHONY: init plan apply tfvars import-budgets
-init:
+.PHONY: init plan apply tfvars
+init: foundation.auto.tfvars
 	@bucket="runway-tfstate-$$(aws sts get-caller-identity --query Account --output text)" && \
 	  tofu init -input=false -reconfigure -lockfile=readonly -backend-config="bucket=$$bucket"
 
@@ -22,5 +22,6 @@ apply: init
 tfvars:
 	@bash tfvars.sh
 
-import-budgets: init
-	@bash import-budgets.sh
+# Rebuilt from AWS only when missing; never overwrites an existing file.
+foundation.auto.tfvars:
+	@bash tfvars.sh

@@ -150,32 +150,6 @@ data "aws_iam_policy_document" "trust_plan" {
   }
 }
 
-# Same pinned workflow as trust_plan, but only on pushes to main.
-data "aws_iam_policy_document" "trust_plan_main" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    principals {
-      type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:aud"
-      values   = ["sts.amazonaws.com"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:sub"
-      values   = ["${var.github_sub_prefix}:ref:refs/heads/main"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:job_workflow_ref"
-      values   = [var.plan_job_workflow_ref]
-    }
-  }
-}
-
 data "aws_iam_policy_document" "trust_apply" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]

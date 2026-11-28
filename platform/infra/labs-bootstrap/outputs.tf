@@ -6,10 +6,6 @@ output "plan_role_arn" {
   value = aws_iam_role.plan.arn
 }
 
-output "plan_main_role_arn" {
-  value = aws_iam_role.plan_main.arn
-}
-
 output "apply_role_arn" {
   value = aws_iam_role.apply.arn
 }
@@ -28,4 +24,9 @@ output "oidc_provider_arn" {
 
 output "region" {
   value = var.region
+}
+
+output "ci_role_arns" {
+  description = "IaC platform v2 roles (module ci-roles), side by side with the legacy roles until pipeline v2."
+  value       = module.ci.role_arns
 }

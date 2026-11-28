@@ -19,8 +19,8 @@ flowchart LR
 
 ## Layout
 - **One folder per stack:** `platform/infra/<stack>/` or `labs/<lab>/infra/`.
-- **`bootstrap/`** (terminal-only, management): management state bucket, GitHub OIDC provider, legacy `runway-plan` / `runway-apply` roles (retired in `STAT-36` Step C).
-- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-plan` (PRs) and `stator-plan-main` (pushes to `main`, writes only `plans/`), both pinned to `tofu-plan.yml` on `main` by `job_workflow_ref`, `stator-apply`, `stator-reaper` and `stator-boundary` under `/stator/`. Run with `AWS_PROFILE=stator-labs make bootstrap`; run `make cutover` after the live OIDC probe passes.
+- **`bootstrap/`** (terminal-only, management): the management state bucket only. No OIDC provider and no CI role: SCPs do not apply to the management account, so nothing there is CI-reachable.
+- **`labs-bootstrap/`** (terminal-only, labs account): `stator-tfstate-<account>` bucket, GitHub OIDC provider, `stator-boundary`, and the CI roles. Legacy roles under `/stator/`: `stator-plan` (PRs, pinned to `tofu-plan.yml`), `stator-apply`, `stator-reaper`. IaC platform v2 roles from [`modules/ci-roles`](modules/ci-roles/README.md) under `/stator/platform/`: `stator-ci-plan-pr`, `stator-ci-plan-main`, `stator-ci-apply`, `stator-ci-reaper`, unused until pipeline v2. Run with `AWS_PROFILE=stator-labs make bootstrap`, then `make cutover`.
 - **`foundation/`** (terminal-only): AWS Organization, `runway-labs` account in `stator-labs` OU, guardrail SCP, centralized root access, 90-day org CloudTrail, IAM Access Analyzer, root sign-in alert, Identity Center, budgets ($5/$15/$30), anomaly monitor and the $30 labs kill-switch SCP (`kill-switch.tf`). Personal values live in git-ignored `foundation.auto.tfvars`.
 - **`modules/`**: shared modules. Changing them plans every stack.
 
@@ -68,7 +68,7 @@ To delete a stack: merge a PR emptying its `.tf` resources first, then a PR dele
 1. Enable IAM Identity Center (org instance) in `us-east-1` via Console.
 2. Check `aws organizations list-aws-service-access-for-organization`; ensure every listed service is in `service_access_principals`.
 3. Turn off IAM role manager in management: `aws iam put-account-properties --properties RoleManager/Enabled=false`.
-4. Build `foundation.auto.tfvars` (`make tfvars` reads live AWS values after `aws sso login --profile stator`; `FORCE=1 make tfvars` overwrites).
+4. `make plan` and `make apply` build `foundation.auto.tfvars` from live AWS values when it is missing. `FORCE=1 make tfvars` rebuilds it.
 5. Run `make plan` (expect additions only, no destroys) then `make apply`. Confirm the SNS email and delete any legacy IAM admin user.
 
 ### Verify the budget kill switch (applied 2026-11-21)
