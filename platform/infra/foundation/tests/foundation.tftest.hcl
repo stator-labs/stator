@@ -198,13 +198,22 @@ run "admin_sessions_last_one_hour_in_both_accounts" {
   command = plan
 
   assert {
-    condition     = aws_ssoadmin_permission_set.admin.session_duration == "PT1H"
+    condition     = alltrue([for p in aws_ssoadmin_permission_set.admin : p.session_duration == "PT1H"])
     error_message = "Admin sessions must last 1 hour."
   }
 
   assert {
-    condition     = toset(keys(aws_ssoadmin_account_assignment.admin)) == toset(["management", "labs"])
-    error_message = "The admin permission set must reach the management and labs accounts."
+    condition     = contains(keys(aws_ssoadmin_permission_set.admin), "stator-admin")
+    error_message = "stator-admin must exist."
+  }
+
+  assert {
+    condition = alltrue([
+      for name in keys(aws_ssoadmin_permission_set.admin) :
+      contains(keys(aws_ssoadmin_account_assignment.admin), "${name}/management")
+      && contains(keys(aws_ssoadmin_account_assignment.admin), "${name}/labs")
+    ])
+    error_message = "Every admin permission set must reach the management and labs accounts."
   }
 }
 
