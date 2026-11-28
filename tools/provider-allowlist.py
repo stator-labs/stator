@@ -17,19 +17,16 @@ Usage:
   python3 tools/provider-allowlist.py --self-test
 Standard library only.
 """
+import json
 import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-# Providers whose plan-time behaviour is API reads only. Add one only after reading what its
-# data sources do: anything that runs a program or makes arbitrary HTTP calls stays out.
-ALLOWED = {
-    "registry.opentofu.org/hashicorp/aws",
-    "registry.opentofu.org/hashicorp/random",
-    "registry.opentofu.org/hashicorp/tls",
-}
+# The allowed list lives in platform/stacks.json, read from main's checkout like this script.
+CONFIG = Path(__file__).resolve().parent.parent / "platform" / "stacks.json"
+ALLOWED = set(json.loads(CONFIG.read_text(encoding="utf-8"))["allowed_providers"]["list"])
 
 LOCK_PROVIDER = re.compile(r'^provider\s+"([^"]+)"', re.MULTILINE)
 
@@ -57,7 +54,7 @@ def check(stack: Path) -> list[str]:
         problems.append(f"{stack}: .terraform.lock.hcl lists no providers")
     for addr in found:
         if addr not in ALLOWED:
-            problems.append(f"{stack}: provider {addr} is not allowed in CI plans (see tools/provider-allowlist.py)")
+            problems.append(f"{stack}: provider {addr} is not allowed in CI plans (see allowed_providers in platform/stacks.json)")
     return problems
 
 

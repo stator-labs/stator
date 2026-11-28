@@ -1,11 +1,11 @@
+# Management account: the state bucket for the terminal-only stacks (bootstrap, foundation).
+# No OIDC provider and no CI role here: SCPs do not apply to the management account, so
+# nothing in it is reachable from CI (IaC platform v2). Yaaf applies it from the terminal.
+
 data "aws_caller_identity" "current" {}
-data "aws_partition" "current" {}
 
 locals {
   account_id = data.aws_caller_identity.current.account_id
-  partition  = data.aws_partition.current.partition
-  iam_path   = "/runway/"
-  iam_arn    = "arn:${local.partition}:iam::${local.account_id}"
   bucket     = "runway-tfstate-${local.account_id}"
 }
 
@@ -98,53 +98,4 @@ resource "aws_s3_bucket_policy" "state" {
   policy = data.aws_iam_policy_document.state_bucket.json
 
   depends_on = [aws_s3_bucket_public_access_block.state]
-}
-
-# ---------------------------------------------------------------- GitHub OIDC
-
-# IAM OIDC providers have no path; this is the one IAM resource outside /runway/.
-# No thumbprint_list: AWS trusts GitHub's certificate through its own CA library.
-resource "aws_iam_openid_connect_provider" "github" {
-  url            = "https://token.actions.githubusercontent.com"
-  client_id_list = ["sts.amazonaws.com"]
-}
-
-data "aws_iam_policy_document" "trust_plan" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    principals {
-      type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:aud"
-      values   = ["sts.amazonaws.com"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:sub"
-      values   = ["${var.github_sub_prefix}:pull_request"]
-    }
-  }
-}
-
-data "aws_iam_policy_document" "trust_apply" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    principals {
-      type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:aud"
-      values   = ["sts.amazonaws.com"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:sub"
-      values   = ["${var.github_sub_prefix}:environment:${var.apply_environment}"]
-    }
-  }
 }

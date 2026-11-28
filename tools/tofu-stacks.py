@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""List OpenTofu stacks for .github/workflows/infrastructure.yml.
+"""List OpenTofu stacks for the Infrastructure workflow, from platform/stacks.json.
 
-A stack is platform/infra/<name>/ or labs/<lab>/infra/ with at least one .tf file.
-Its state key is <name>/terraform.tfstate (for a lab: <lab folder>/terraform.tfstate),
-except stacks in KEPT_KEYS, renamed after their first apply, which keep their first key.
+A stack is platform/infra/<name>/ or labs/<lab>/infra/ with at least one .tf file. Every
+stack must be listed in platform/stacks.json. Its state key is <state_key or id>/terraform.tfstate.
+Stacks with "ci": false are terminal only: CI lints and tests them but never plans or applies them.
 
-  tofu-stacks.py check            every stack declares backend "s3" with its own key
-  tofu-stacks.py all              all stack dirs, JSON list (bootstrap included)
+  tofu-stacks.py check            every stack is listed and declares backend "s3" with its key
+  tofu-stacks.py all              all stack dirs, JSON list (terminal stacks included)
+  tofu-stacks.py ci               stack dirs CI plans and applies, JSON list
   tofu-stacks.py changed BASE HEAD
-                                  stacks touched between two commits, JSON list.
-                                  Excludes TERMINAL_ONLY stacks: only Yaaf applies them.
+                                  CI stacks touched between two commits, JSON list
 Standard library only.
 """
 import json
@@ -19,56 +19,71 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-# Applied only from Yaaf's terminal. CI lints them but never plans or applies them: bootstrap
-# creates the CI roles, and foundation manages the AWS organization from the management account.
-TERMINAL_ONLY = ("platform/infra/bootstrap", "platform/infra/labs-bootstrap", "platform/infra/foundation")
-# Changes here can affect every stack, so they plan/apply all of them.
-SHARED = ("platform/infra/modules/", ".github/workflows/infrastructure.yml", "tools/tofu-stacks.py",
-          "tools/checkov/", ".tflint.hcl")
-# Stacks renamed after their first apply keep their state key, so the rename moves no state.
-KEPT_KEYS = {"00-account-foundation": "00-ground-rules"}
+CONFIG = ROOT / "platform" / "stacks.json"
 
 
-def stacks() -> dict[str, str]:
-    """dir -> stack name"""
-    found = {}
+def load() -> dict:
+    return json.loads(CONFIG.read_text(encoding="utf-8"))
+
+
+def on_disk() -> list:
+    found = []
     for d in sorted((ROOT / "platform/infra").glob("*/")):
         if d.name != "modules" and any(d.glob("*.tf")):
-            found[d.relative_to(ROOT).as_posix()] = d.name
+            found.append(d.relative_to(ROOT).as_posix())
     for d in sorted((ROOT / "labs").glob("*/infra/")):
         if any(d.glob("*.tf")):
-            found[d.relative_to(ROOT).as_posix()] = d.parent.name
+            found.append(d.relative_to(ROOT).as_posix())
     return found
+
+
+def stacks() -> dict:
+    """dir -> config entry (with its id)"""
+    return {s["dir"]: {**s, "id": sid} for sid, s in load()["stacks"].items()}
+
+
+def ci_stacks() -> list:
+    return [d for d, s in stacks().items() if s.get("ci")]
 
 
 def check() -> int:
     bad = []
-    names: dict[str, str] = {}
-    for d, name in stacks().items():
-        if name in names:
-            bad.append(f"{d}: stack name '{name}' is also used by {names[name]}")
-        names[name] = d
+    listed = stacks()
+    for d in on_disk():
+        if d not in listed:
+            bad.append(f"{d}: not listed in platform/stacks.json")
+    for d, s in listed.items():
+        if not (ROOT / d).is_dir():
+            bad.append(f"{d}: listed as '{s['id']}' but missing on disk")
+            continue
+        key = s.get("state_key", s["id"])
         text = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / d).glob("*.tf"))
         if not re.search(r'backend\s+"s3"', text):
             bad.append(f'{d}: no backend "s3" block')
-        elif not re.search(rf'key\s*=\s*"{re.escape(KEPT_KEYS.get(name, name))}/terraform\.tfstate"', text):
-            bad.append(f'{d}: backend key must be "{KEPT_KEYS.get(name, name)}/terraform.tfstate"')
+        elif not re.search(rf'key\s*=\s*"{re.escape(key)}/terraform\.tfstate"', text):
+            bad.append(f'{d}: backend key must be "{key}/terraform.tfstate"')
+        if s.get("account") not in ("management", "labs"):
+            bad.append(f"{d}: account must be management or labs")
+        if s.get("ci") and s.get("account") == "management":
+            bad.append(f"{d}: management stacks are terminal only (SCPs do not bind that account)")
+        if s.get("floor", "auto") not in ("auto", "manual"):
+            bad.append(f"{d}: floor must be auto or manual")
     for b in bad:
         print(f"tofu-stacks: {b}", file=sys.stderr)
     if not bad:
-        print(f"tofu-stacks: OK ({len(names)} stacks)", file=sys.stderr)
+        print(f"tofu-stacks: OK ({len(listed)} stacks)", file=sys.stderr)
     return 1 if bad else 0
 
 
-def changed(base: str, head: str) -> list[str]:
-    all_stacks = [d for d in stacks() if d not in TERMINAL_ONLY]
-    if set(base) <= {"0"}:  # first push of a branch: no base to diff against
-        return all_stacks
+def changed(base: str, head: str) -> list:
+    ci = ci_stacks()
+    if set(base) <= {"0"}:  # no base to diff against
+        return ci
     files = subprocess.run(["git", "diff", "--name-only", f"{base}...{head}"], cwd=ROOT,
                            check=True, capture_output=True, text=True).stdout.split()
-    if any(f.startswith(SHARED) for f in files):
-        return all_stacks
-    return [d for d in all_stacks if any(f.startswith(d + "/") for f in files)]
+    if any(f.startswith(tuple(load()["shared_paths"])) for f in files):
+        return ci
+    return [d for d in ci if any(f.startswith(d + "/") for f in files)]
 
 
 def main() -> int:
@@ -77,6 +92,9 @@ def main() -> int:
         return check()
     if cmd == "all":
         print(json.dumps(list(stacks())))
+        return 0
+    if cmd == "ci":
+        print(json.dumps(ci_stacks()))
         return 0
     if cmd == "changed" and len(sys.argv) == 4:
         print(json.dumps(changed(sys.argv[2], sys.argv[3])))
